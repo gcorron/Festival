@@ -18,4 +18,5 @@ namespace FestivalEntry
             BundleConfig.RegisterBundles(BundleTable.Bundles);
         }
     }
+
 }

@@ -7,6 +7,7 @@ using System.Web.Security;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using Microsoft.AspNet.Identity;
+using FestivalEntry.Models;
 
 namespace FestivalEntry
 {
@@ -20,8 +21,7 @@ namespace FestivalEntry
         {
             // The code below helps to protect against XSRF attacks
             var requestCookie = Request.Cookies[AntiXsrfTokenKey];
-            Guid requestCookieGuidValue;
-            if (requestCookie != null && Guid.TryParse(requestCookie.Value, out requestCookieGuidValue))
+            if (requestCookie != null && Guid.TryParse(requestCookie.Value, out Guid requestCookieGuidValue))
             {
                 // Use the Anti-XSRF token from the cookie
                 _antiXsrfTokenValue = requestCookie.Value;
@@ -75,6 +75,22 @@ namespace FestivalEntry
         protected void Unnamed_LoggingOut(object sender, LoginCancelEventArgs e)
         {
             Context.GetOwinContext().Authentication.SignOut(DefaultAuthenticationTypes.ApplicationCookie);
+            Session["Person"] = null;
+        }
+
+
+        private void ShowError(string message)
+        {
+            LabelError.Text = message;
+            ErrorPanel.Visible = true;
+        }
+
+        protected Person ThePerson {
+            get {
+                if (Session["Person"] is null)
+                        Session["Person"] = SQLData.GetPerson(Context.User.Identity.GetUserId());
+                return (Person)Session["Person"];
+            }
         }
     }
 
