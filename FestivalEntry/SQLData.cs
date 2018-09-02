@@ -11,15 +11,23 @@ namespace FestivalEntry
 {
     public class SQLData
     {
+        const string _errString = "*** Error ***";
+        public delegate void HandleError(Exception exc);
 
-        public static Person GetPerson(string userId)
+        public static Person GetPerson(string userId,HandleError handleError)
         {
-            using (IDbConnection connection = GetDBConnection())
-            {
-                var personlist = connection.Query<Person>($"SelectPersonx @id='{userId}'").ToList<Person>();
-                if (personlist.Count != 1)
-                    throw new RowNotInTableException();
-                return personlist[0];
+            try {
+                using (IDbConnection connection = GetDBConnection())
+                {
+                    var personlist = connection.Query<Person>($"SelectPerson @id='{userId}'").ToList<Person>();
+                    if (personlist.Count != 1)
+                        throw new RowNotInTableException();
+                    return personlist[0];
+                }
+            }
+            catch (Exception e) {
+                handleError(e);
+                return new Person {InstrumentName=_errString, LocationName=_errString,PersonName=_errString };
             }
         }
 
