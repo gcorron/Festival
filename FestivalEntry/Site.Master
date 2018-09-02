@@ -86,17 +86,15 @@
                 </div>
             </div>
         </div>
-
         <div class="container body-content">
             <asp:ContentPlaceHolder ID="MainContent" runat="server">
             </asp:ContentPlaceHolder>
 
-            <div class="container body-content" ID="PanelError" Visible="false" runat="server">
-                <br /><br />
-                <div class="alert alert-warning" ID="ErrorText" runat="server">
-                </div>
+            <div ID="ErrorPanel" runat="server" Visible="false">
+                <Button ID="Clear" onClick="$('#ErrorPanel').hide();">Clear</Button>
+                <asp:Label runat="server" ID="LabelError" BackColor="Yellow" EnableTheming="True" Text="Error Message"></asp:Label>
             </div>
-            
+
             <hr />
             <footer>
                 <p>&copy; <%: DateTime.Now.Year %> - National Music Festival</p>

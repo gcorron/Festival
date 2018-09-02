@@ -22,21 +22,21 @@ namespace FestivalEntry {
         protected global::System.Web.UI.WebControls.ContentPlaceHolder MainContent;
         
         /// <summary>
-        /// PanelError control.
+        /// ErrorPanel control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.HtmlControls.HtmlGenericControl PanelError;
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl ErrorPanel;
         
         /// <summary>
-        /// ErrorText control.
+        /// LabelError control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.HtmlControls.HtmlGenericControl ErrorText;
+        protected global::System.Web.UI.WebControls.Label LabelError;
     }
 }

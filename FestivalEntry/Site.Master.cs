@@ -79,22 +79,16 @@ namespace FestivalEntry
         }
 
 
-        private void ShowError(Exception exc)
+        private void ShowError(string message)
         {
-            ErrorText.InnerHtml = $"<h2>Server Error <small>({exc.Message})</small></h2>";
-            PanelError.Visible = true;
-            MainContent.Visible = false;
-
-            // Log the exception and notify system operators
-            ExceptionUtility.LogException(exc, "DefaultPage");
-            ExceptionUtility.NotifySystemOps(exc);
-
+            LabelError.Text = message;
+            ErrorPanel.Visible = true;
         }
 
         protected Person ThePerson {
             get {
                 if (Session["Person"] is null)
-                        Session["Person"] = SQLData.GetPerson(Context.User.Identity.GetUserId(),ShowError);
+                        Session["Person"] = SQLData.GetPerson(Context.User.Identity.GetUserId());
                 return (Person)Session["Person"];
             }
         }
