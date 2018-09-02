@@ -1,12 +1,12 @@
 ﻿CREATE TABLE [dbo].[Entry] (
     [Id]                  INT           IDENTITY (1, 1) NOT NULL,
-    [Event]               INT           NOT NULL,
+    [Status]              CHAR (1)      NOT NULL,
     [Teacher]             INT           NOT NULL,
     [Student]             INT           NOT NULL,
+    [EventType]           CHAR (1)      NOT NULL,
     [EventClass]          VARCHAR (10)  NOT NULL,
     [RequiredPiece]       INT           NULL,
-    [ChoicePiece]         NVARCHAR (50) NOT NULL,
-    [ChoiceComposer]      NVARCHAR (50) NOT NULL,
+    [ChoicePiece]         INT           NULL,
     [Publisher]           NVARCHAR (20) NULL,
     [Accompanist]         NVARCHAR (20) NULL,
     [Notes]               NVARCHAR (50) NULL,
@@ -15,10 +15,6 @@
     [ConsecYearsSuperior] TINYINT       NOT NULL,
     [AccumulatedPoints]   TINYINT       NOT NULL,
     [AwardRating]         CHAR (1)      NOT NULL,
-    [AwardPoints]         TINYINT       NOT NULL,
-    [Judge]               INT           NOT NULL,
-    [AuditionTime]        SMALLDATETIME NOT NULL
+    [AwardPoints]         TINYINT       NOT NULL
 );
-
-
 
