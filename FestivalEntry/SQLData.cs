@@ -16,7 +16,7 @@ namespace FestivalEntry
         {
             using (IDbConnection connection = GetDBConnection())
             {
-                var personlist = connection.Query<Person>($"SelectPersonx @id='{userId}'").ToList<Person>();
+                var personlist = connection.Query<Person>($"SelectPerson @id='{userId}'").ToList<Person>();
                 if (personlist.Count != 1)
                     throw new RowNotInTableException();
                 return personlist[0];
