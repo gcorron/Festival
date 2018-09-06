@@ -3,56 +3,104 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using Dapper;
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 
 namespace FestivalEntry.Models
 {
-    public struct Person
+    [BindableType]
+    public class Contact
     {
-        public string PersonName { get; set; }
+        public int Id { get; set; }
+        [Required]
+        [StringLength(100)]
+        public string Email { get; set; }
+        [Required]
+        [StringLength(100)]
+        public string PhoneNumber { get; set; }
+        [Required]
+        [StringLength(50)]
+        public string LastName { get; set; }
+        [Required]
+        [StringLength(50)]
+        public string FirstName { get; set; }
+        public string UserName { get; } //auto generated when login created
+        public string InstrumentId { get; set; }
+        public Boolean Available { get; set; }
+        public Boolean Assigned { get; set; }
 
-        private string locationName;
-        public string LocationName {
-            get {
-                return locationName;
-            }
-            set {
-                locationName = string.IsNullOrEmpty(locationName) ? value : throw new ArgumentException("Cannot reassign LocationName");        
-            }
-        }
+        public string FullName { get => $"{FirstName} {LastName}"; }
+    }
 
-        private int locationId;
-        public int LocationId {
-            get {
-                return locationId;
-            }
-            set {
-                locationId = locationId == 0 ? value : throw new ArgumentException("Cannot reassign LocationId");
-            }
-        }
+    public class Location
+    { 
+        public string LocationName { get; set; }
+        public int LocationId { get; set; }
+        public int? ContactId { get; set; }
+        public char LocationType { get; set; }
+    }
 
-        public string InstrumentName { get; set; }
-        public int InstrumentId { get; set; }
+    
+    public struct LoginPerson
+    {
+        public string LastName { get; set; }
+        public string FirstName { get; set; }
+        public char Instrument { get; set; }
+        public string LocationName { get; set; }
+        public int LocationId { get; set; }
+        public string ParentLocationName { get; set; }
+        public int ParentLocaitonId { get; set; }
+        public string FullName { get => $"{FirstName} {LastName}"; }
+        public char RoleType { get; set; }
 
-        private int teacherId;
-        public int TeacherId
+        public string LocationDomain
         {
             get
             {
-                return teacherId;
+                switch (RoleType)
+                {
+                    case 'A': return "Division";
+                    case 'B': return "Region";
+                    case 'C': return "District";
+                    case 'D': return "Teacher";
+                    case 'E': return "Teacher";
+                    default: return "---";
+                }
             }
-            set
+        }
+        public string LocationRoles
+        {
+            get
             {
-                teacherId = teacherId == 0 ? value : throw new ArgumentException("Cannot reassign TeacherId");
+                switch (RoleType)
+                {
+                    case 'A': return "Director";
+                    case 'B': return "Coordinator";
+                    case 'C': return "Chair";
+                    case 'D': return "Teacher";
+                    case 'E': return "Teacher";
+                    default: return "---";
+                }
+            }
+        }
+        public string AdminTitle
+        {
+            get
+            {
+                switch (RoleType)
+                {
+                    case 'A': return "Administrator";
+                    case 'B': return "Director";
+                    case 'C': return "Coordinator";
+                    case 'D': return "Chair";
+                    case 'E': return "Vice-Chair";
+                    default: return "None";
+                }
             }
         }
 
-        public string PersonType { get => TeacherId==0 ? "Admin" : "Teacher"; }
-    }
 
 
-    public static class PersonHelper
-    {
-        
     }
 
 }

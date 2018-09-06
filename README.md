@@ -4,9 +4,10 @@ Created with Visual Studio 2017, this ASP.NET Web Forms Application is a demo pr
 
 ### Installing
 
-This project is a work in progress. Do not attempt to install yet!
+<i>This project is a work in progress. Do not attempt to install yet!</i>
 
-Restore the SQL Server database from FestivalDatabase/Festival.bak. Then load FestivalEntry.sln using Visual Studio. You will need to change the connection string in Web.config to point to the FestivalDatabase. 
+{ Restore the SQL Server database from FestivalDatabase/Festival.bak. Then load FestivalEntry.sln using Visual Studio.
+You will need to change the connection string in Web.config to point to the Festival database. } 
 
 ## Built With
 

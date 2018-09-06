@@ -69,13 +69,11 @@ namespace FestivalEntry
 
         protected void Page_Load(object sender, EventArgs e)
         {
-
         }
 
         protected void Unnamed_LoggingOut(object sender, LoginCancelEventArgs e)
         {
             Context.GetOwinContext().Authentication.SignOut(DefaultAuthenticationTypes.ApplicationCookie);
-            Session["Person"] = null;
         }
 
 
@@ -85,11 +83,19 @@ namespace FestivalEntry
             ErrorPanel.Visible = true;
         }
 
-        protected Person ThePerson {
-            get {
-                if (Session["Person"] is null)
-                        Session["Person"] = SQLData.GetPerson(Context.User.Identity.GetUserId());
-                return (Person)Session["Person"];
+        private LoginPerson noUser=new LoginPerson { LastName = "-----"};
+
+        protected LoginPerson TheUser
+        {
+            get
+            {
+                if (Session["TheUser"] is null)
+                {
+                    ShowError("Server error. Try logging out, then log in again.");
+                    return noUser;
+                }
+
+                return (LoginPerson)Session["TheUser"];
             }
         }
     }

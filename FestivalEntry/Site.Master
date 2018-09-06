@@ -44,7 +44,7 @@
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>
                     </button>
-                    <a class="navbar-brand" runat="server" href="~/">Application name</a>
+                    <a class="navbar-brand" runat="server" href="~/">Festival Entry App</a>
                 </div>
                 <div class="navbar-collapse collapse">
                     <ul class="nav navbar-nav">
@@ -55,31 +55,18 @@
                     <asp:LoginView runat="server" ViewStateMode="Disabled">
                         <AnonymousTemplate>
                             <ul class="nav navbar-nav navbar-right">
+                                <li><a runat="server" href="~/Account/TeacherLogin">Teacher Log in</a></li>
+                                <li><a runat="server" href="~/Account/AdminLogin">Admin Log in</a></li>
                                 <li><a runat="server" href="~/Account/Register">Register</a></li>
-                                <li><a runat="server" href="~/Account/Login">Log in</a></li>
                             </ul>
                         </AnonymousTemplate>
 
                         <LoggedInTemplate>
-                            <ul class="nav navbar-nav">
-                                <li class="dropdown">
-                                    <a class="dropdown-toggle" data-toggle="dropdown" href="#">Roles <span class="caret"></span></a>
-                                    <ul class="dropdown-menu">
-                                        <li><a href="~/Roles/ManageRoles">Manage Roles</a></li>
-                                        <li><a href="~/Roles/UsersAndRoles">Users and Roles</a></li>
-                                        <li><a href="~/Roles/CreateUserWizardWithRoles">Create Account (with Roles)</a></li>
-                                        <li><a href="~/Roles/RoleBasedAuthorization">Role-Based Authorization</a></li>
-
-                                    </ul>
-                                </li>
-                            </ul>
-
                             <ul class="nav navbar-nav navbar-right">
-                                <li><a runat="server" href="~/Account/Manage" title="Manage your account">Hello, <%: ThePerson.PersonName  %> !</a></li>
+                                <li><a ID="UserName" runat="server" href="~/Account/Manage" title="Manage your account">Hello, <%: TheUser.FullName  %> !</a></li>
                                 <li>
                                     <asp:LoginStatus runat="server" LogoutAction="Redirect" LogoutText="Log off" LogoutPageUrl="~/" OnLoggingOut="Unnamed_LoggingOut" />
                                 </li>
-
                             </ul>
                         </LoggedInTemplate>
                     </asp:LoginView>
@@ -91,7 +78,6 @@
             </asp:ContentPlaceHolder>
 
             <div ID="ErrorPanel" runat="server" Visible="false">
-                <Button ID="Clear" onClick="$('#ErrorPanel').hide();">Clear</Button>
                 <asp:Label runat="server" ID="LabelError" BackColor="Yellow" EnableTheming="True" Text="Error Message"></asp:Label>
             </div>
 

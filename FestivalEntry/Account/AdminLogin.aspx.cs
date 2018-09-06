@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Web;
 using System.Web.UI;
-using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.Owin;
-using Owin;
 using FestivalEntry.Models;
 
 namespace FestivalEntry.Account
@@ -31,7 +29,19 @@ namespace FestivalEntry.Account
                 switch (result)
                 {
                     case SignInStatus.Success:
-                        IdentityHelper.RedirectToReturnUrl(Request.QueryString["ReturnUrl"], Response);
+                        LoginPerson theUser;
+                        try
+                        {
+                            theUser = SQLData.GetLoginPerson(UserName.Text);
+                            Session["TheUser"] = theUser;
+                        }
+                        catch (Exception exc)
+                        {
+                            FailureText.Text = $"Server error: {exc.Message}";
+                            ErrorMessage.Visible = true;
+                            return;
+                        }
+                        Response.Redirect("/Admin");
                         break;
                     case SignInStatus.LockedOut:
                         Response.Redirect("/Account/Lockout");
@@ -50,5 +60,6 @@ namespace FestivalEntry.Account
                 }
             }
         }
+
     }
 }

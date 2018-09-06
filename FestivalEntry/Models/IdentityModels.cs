@@ -2,6 +2,7 @@
 using System.Security.Claims;
 using System.Threading.Tasks;
 using System.Web;
+using System.Web.Security;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
 using Microsoft.AspNet.Identity.Owin;
@@ -44,6 +45,22 @@ namespace FestivalEntry.Models
 #region Helpers
 namespace FestivalEntry
 {
+    public static class FestivalIdentity
+    {
+        public static void CreateUser(HttpContext context, string LastName, string email, string phone)
+        {
+            // generate user name
+            string seed = LastName.Substring(0, 5);
+            string password = Membership.GeneratePassword(6, 0);
+            string userName = SQLData.GenerateUserName(seed);
+            var manager = context.GetOwinContext().GetUserManager<ApplicationUserManager>();
+
+            var user = new ApplicationUser() { UserName = userName, Email= email, PhoneNumber = phone };
+            IdentityResult result = manager.Create(user, password);
+
+        }
+    }
+
     public static class IdentityHelper
     {
         // Used for XSRF when linking external logins
