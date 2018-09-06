@@ -9,7 +9,7 @@ using System.ComponentModel.DataAnnotations;
 namespace FestivalEntry.Models
 {
     [BindableType]
-    public class Contact
+    public struct Contact
     {
         public int Id { get; set; }
         [Required]
@@ -32,7 +32,7 @@ namespace FestivalEntry.Models
         public string FullName { get => $"{FirstName} {LastName}"; }
     }
 
-    public class Location
+    public struct Location
     { 
         public string LocationName { get; set; }
         public int LocationId { get; set; }

@@ -11,8 +11,8 @@ namespace FestivalEntry
 {
     public partial class Admin : System.Web.UI.Page
     {
-        private List<Location> locations;
-        private Dictionary<int, Contact> people;
+        private Location[] locations;
+        private Contact[] people;
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -24,10 +24,10 @@ namespace FestivalEntry
             if (id is null)
                 return "-----";
             else
-                return people[(int)id].FullName;
+                return people.Where(p => p.Id == id).Single().FullName;
         }
 
-        protected List<Location> Locations
+        protected Location[] Locations
         {
             get
             {
@@ -37,7 +37,7 @@ namespace FestivalEntry
             }
         }
 
-        protected Dictionary<int,Contact> People { get => people; }
+        protected Contact[] People { get => people; }
 
         protected LoginPerson TheUser
         {

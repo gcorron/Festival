@@ -23,15 +23,15 @@ namespace FestivalEntry
         //        return resultList[0]; // new locationID
         //    }
         //}
-        public static void SelectLocationsByParent(int parentLocation, ref List<Location> locations, ref Dictionary<int,Contact> contacts)
+        public static void SelectLocationsByParent(int parentLocation, ref Location[] locations, ref Contact[] contacts)
         {
             using (IDbConnection connection = GetDBConnection())
             {
 
                 using (var multi = connection.QueryMultiple("SelectLocationsByParent", new { parentLocation }, commandType: CommandType.StoredProcedure))
                 {
-                    locations = multi.Read<Location>().ToList<Location>();
-                    contacts = multi.Read<Contact>().ToDictionary(p => p.Id);
+                    locations = multi.Read<Location>().ToArray();
+                    contacts = multi.Read<Contact>().ToArray();
                 }
             }
         }
