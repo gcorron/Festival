@@ -32,7 +32,7 @@ namespace FestivalEntry
             get
             {
                 if (locations is null)
-                    SQLData.SelectLocationsByParent(TheUser.LocationId,ref locations,ref people);
+                    SQLData.SelectLocationsByParent(TheUser.LocationId, ref locations, ref people);
                 return locations;
             }
         }

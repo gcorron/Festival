@@ -11,7 +11,7 @@
     <asp:PlaceHolder runat="server">
         <%: Scripts.Render("~/bundles/modernizr") %>
     </asp:PlaceHolder>
-    <webopt:bundlereference runat="server" path="~/Content/css" />
+    <webopt:BundleReference runat="server" Path="~/Content/css" />
     <link href="~/favicon.ico" rel="shortcut icon" type="image/x-icon" />
 </head>
 <body>
@@ -63,7 +63,7 @@
 
                         <LoggedInTemplate>
                             <ul class="nav navbar-nav navbar-right">
-                                <li><a ID="UserName" runat="server" href="~/Account/Manage" title="Manage your account">Hello, <%: TheUser.FullName  %> !</a></li>
+                                <li><a id="UserName" runat="server" href="~/Account/Manage" title="Manage your account">Hello, <%: TheUser.FullName  %> !</a></li>
                                 <li>
                                     <asp:LoginStatus runat="server" LogoutAction="Redirect" LogoutText="Log off" LogoutPageUrl="~/" OnLoggingOut="Unnamed_LoggingOut" />
                                 </li>
@@ -77,10 +77,9 @@
             <asp:ContentPlaceHolder ID="MainContent" runat="server">
             </asp:ContentPlaceHolder>
 
-            <div ID="ErrorPanel" runat="server" Visible="false">
+            <div id="ErrorPanel" runat="server" class="col-sm-12" visible="false">
                 <asp:Label runat="server" ID="LabelError" BackColor="Yellow" EnableTheming="True" Text="Error Message"></asp:Label>
             </div>
-
             <hr />
             <footer>
                 <p>&copy; <%: DateTime.Now.Year %> - National Music Festival</p>
