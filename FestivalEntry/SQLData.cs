@@ -23,16 +23,35 @@ namespace FestivalEntry
         //        return resultList[0]; // new locationID
         //    }
         //}
-        public static void SelectLocationsByParent(int parentLocation, ref Location[] locations, ref Contact[] contacts)
+
+        public static int UpdatePerson(int parentLocationId, Contact contact)
         {
             using (IDbConnection connection = GetDBConnection())
             {
+                int ret = connection.Query<int>("UpdatePerson",
+                    new {parentLocationId,
+                        id = contact.Id,userName=contact.UserName,lastName=contact.LastName,
+                        firstName=contact.FirstName, email=contact.Email,phone=contact.Phone,
+                        available=contact.Available, instrument=contact.Instrument}
+                        , commandType: CommandType.StoredProcedure).Single<int>();
+                return ret;
+            }
 
-                using (var multi = connection.QueryMultiple("SelectLocationsByParent", new { parentLocation }, commandType: CommandType.StoredProcedure))
-                {
-                    locations = multi.Read<Location>().ToArray();
-                    contacts = multi.Read<Contact>().ToArray();
-                }
+        }
+        public static List<Contact> SelectContactsByParent(int parentLocation)
+        {
+            using (IDbConnection connection = GetDBConnection())
+            {
+                return connection.Query<Contact>("SelectLocationsByParent", new { parentLocation }, commandType: CommandType.StoredProcedure).ToList<Contact>();
+            }
+        }
+
+
+        public static Location[] SelectLocationsByParent(int parentLocation)
+        {
+            using (IDbConnection connection = GetDBConnection())
+            {
+                return connection.Query<Location>("SelectLocationsByParent", new { parentLocation }, commandType: CommandType.StoredProcedure).ToArray<Location>();
             }
         }
 

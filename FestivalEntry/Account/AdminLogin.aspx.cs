@@ -3,6 +3,7 @@ using System.Web;
 using System.Web.UI;
 using Microsoft.AspNet.Identity.Owin;
 using FestivalEntry.Models;
+using System.Web.Security;
 
 namespace FestivalEntry.Account
 {
@@ -33,6 +34,12 @@ namespace FestivalEntry.Account
                         try
                         {
                             theUser = SQLData.GetLoginPerson(UserName.Text);
+
+                            HttpCookie authCookie = FormsAuthentication.GetAuthCookie(UserName.Text, RememberMe.Checked);
+                            FormsAuthenticationTicket ticket = FormsAuthentication.Decrypt(authCookie.Value);
+                            FormsAuthenticationTicket newTicket =
+                                new FormsAuthenticationTicket(ticket.Version, ticket.Name, ticket.IssueDate, ticket.Expiration, ticket.IsPersistent,
+                                theUser.RoleType + theUser.LocationId.ToString());
                             Session["TheUser"] = theUser;
                         }
                         catch (Exception exc)
@@ -41,7 +48,7 @@ namespace FestivalEntry.Account
                             ErrorMessage.Visible = true;
                             return;
                         }
-                        Response.Redirect("/Admin");
+                        Response.Redirect($"/Admin?{UserName.Text}");
                         break;
                     case SignInStatus.LockedOut:
                         Response.Redirect("/Account/Lockout");
