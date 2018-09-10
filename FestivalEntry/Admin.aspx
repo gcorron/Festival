@@ -97,36 +97,57 @@
         }
     </style>
     <script>
-        $(document).ready(function () {
-            getPeople();
-        });
 
+    var AdminApp = (function () {
 
-        function fillSlot() {
-            var locationRadio = $('input[name=chooseLocation]:checked')[0];
-            var personRadio = $('input[name=choosePerson]:checked')[0];
+        myStorage = new classStorage();
+        getPeople();
 
-            var locationId = locationRadio.value;
-            var personId = personRadio.value;
+        return {
+            fillslot: function () {
+                var locationRadio = $('input[name=chooseLocation]:checked')[0];
+                var personRadio = $('input[name=choosePerson]:checked')[0];
 
-            var locationName = locationRadio.parentElement.parentElement.childNodes[0].innerText();
-            var personName = personRadio.parentElement.parentElement.childNodes[1].innerText();
-            var oldPersonName = '';
+                var locationId = locationRadio.value;
+                var personId = personRadio.value;
 
-        }
+                var locationName = locationRadio.parentElement.parentElement.childNodes[0].innerText();
+                var personName = personRadio.parentElement.parentElement.childNodes[1].innerText();
+                var oldPersonName = '';
+            },
 
-        function updatePerson() {
-            $.ajax({
-                type: "POST",
-                url: "Admin.aspx/UpdatePerson",
-                data: inputJson(),
-                contentType: "application/json; charset=utf-8",
-                dataType: "json",
-                success: onUpdatePersonSuccess,
-                failure: onUpdatePersonFailure,
-                error: onUpdatePersonFailure
-            });
-        }
+            editPerson: function (mode) {
+                var id = (mode === 'A' ? 0 : $('input[name=choosePerson]:checked').val());
+                populatePerson(id);
+                hide('.no-new, #submitError');
+                location.hash = "#modal";
+            },
+
+            updatePerson: function () {
+                $.ajax({
+                    type: "POST",
+                    url: "Admin.aspx/UpdatePerson",
+                    data: formPersonJson(),
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    success: onUpdatePersonSuccess,
+                    failure: onUpdatePersonFailure,
+                    error: onUpdatePersonFailure
+                });
+            },
+
+            enableFill: function () {
+                if ($('input[name="chooseLocation"]:checked').val())
+                    if ($('input[name="choosePerson"]:checked').val())
+                        enableButton('fill');
+            },
+
+            enableEditAndFill: function () {
+                enableButton('edit');
+                enableFill();
+            }
+
+        };
 
         function onUpdatePersonSuccess(response) {
             person = JSON.parse(response.d);
@@ -135,7 +156,6 @@
         }
 
         function onUpdatePersonFailure(response) {
-
             $('#serverError').text(parseResponse(response));
             show('#submitError');
 
@@ -160,39 +180,9 @@
             }
         }
 
-
-        function inputJson() {
-            person = JSON.parse(localStorage.getItem(personKey(0)));
-            for (var name in person) {
-                control = $('#' + name);
-                if (control) {
-                    if ($(control).attr('type') === 'checkbox')
-                        person[name] = control.prop('checked');
-                    else
-                        person[name] = control.val();
-                }
-            }
-            return JSON.stringify({ person: person });
-        }
-
-        function editPerson(mode) {
-            var id = (mode === 'A' ? 0 : $('input[name=choosePerson]:checked').val());
-            populatePerson(id);
-            hide('.no-new, #submitError');
-            location.hash = "#modal";
-        }
-
-        function show(selector) {
-            $(selector).removeClass('hide');
-        }
-
-        function hide(selector) {
-            $(selector).addClass('hide');
-        }
-
         function populatePerson(id) {
             var key = personKey(id);
-            var person = localStorage.getItem(key);
+            var person = myStorage.get(key);
             if (!person) {
                 var mess = key + ' not found!';
                 alert(mess);
@@ -210,7 +200,6 @@
             }
         }
 
-
         /* retrieve people and locations from server, display, and save to local storage */
         function getPeople() {
             $.ajax({
@@ -227,7 +216,7 @@
         }
 
         function storeAndRenderPeople(response) {
-            localStorage.clear();
+            //localStorage.clear();
 
             var array = JSON.parse(response.d)
             var people = array[0];
@@ -247,25 +236,12 @@
                 clone.removeAttribute('class');
                 table.append(clone);
             }
-
-        }
-
-        function contactName(id) {
-            if (id == null) {
-                return '';
-            }
-            person = localStorage.getItem(personKey(id));
-            return fullName(person);
-        }
-
-        function fullName(person) {
-            return person.FirstName + ' ' + person.LastName;
         }
 
         function storeAndRender2(person) {
             if (person.Id)
                 appendPerson(person);
-            localStorage.setItem(personKey(person.Id), JSON.stringify(person));
+            myStorage.set(personKey(person.Id), JSON.stringify(person));
         }
 
         function appendPerson(person) {
@@ -301,25 +277,62 @@
             document.getElementById(buttonName).classList.remove('disabled');
         }
 
-        function enableFill() {
-            if ($('input[name="chooseLocation"]:checked').val())
-                if ($('input[name="choosePerson"]:checked').val())
-                    enableButton('fill');
-        }
-
-        function enableEditAndFill() {
-            enableButton('edit');
-            enableFill();
-        }
-
         function personKey(id) {
             return 'person' + id;
+        }
+
+        function classStorage() {
+            var store = {};
+
+            this.set = function (key, datum) {
+                store[key] = datum;
+            };
+
+            this.get = function (key) {
+                return store[key];
+            };
+        }
+
+
+        function formPersonJson() {
+            person = JSON.parse(myStorage.get(personKey(0)));
+            for (var name in person) {
+                control = $('#' + name);
+                if (control) {
+                    if ($(control).attr('type') === 'checkbox')
+                        person[name] = control.prop('checked');
+                    else
+                        person[name] = control.val();
+                }
+
+            }
+            return JSON.stringify({ person: person });
+        }
+
+        function show(selector) {
+            $(selector).removeClass('hide');
+        }
+
+        function hide(selector) {
+            $(selector).addClass('hide');
+        }
+
+        function contactName(id) {
+            if (id == null) {
+                return '';
+            }
+            person = myStorage.get(personKey(id));
+            return fullName(person);
+        }
+
+        function fullName(person) {
+            return person.FirstName + ' ' + person.LastName;
         }
 
         function locationKey(id) {
             return 'location' + id;
         }
-
+    })();
     </script>
 
     <asp:PlaceHolder runat="server" ID="ErrorMessage" Visible="false">
@@ -346,7 +359,7 @@
                     <tr id="blankLocation" class="hide">
                         <td></td>
                         <td class="centered">
-                            <input type="radio" id="chooseLocation" value="0" onclick="enableFill()">
+                            <input type="radio" id="chooseLocation" value="0" onclick="AdminApp.enableFill()">
                         </td>
                         <td></td>
                     </tr>
@@ -364,11 +377,11 @@
                 <thead>
                     <tr>
                         <th style="width: 50px; text-align: center">
-                            <a class="btn btn-xs btn-primary disabled" id="edit" onclick="editPerson('E')">Edit</a>
+                            <a class="btn btn-xs btn-primary disabled" id="edit" onclick="AdminApp.editPerson('E')">Edit</a>
                         </th>
                         <th>Name
                         <div class="col-sm-2 pull-right" style="margin-right: 10px;">
-                            <a class="btn btn-xs btn-primary" onclick="editPerson('A')">Add</a>
+                            <a class="btn btn-xs btn-primary" onclick="AdminApp.editPerson('A')">Add</a>
                         </div>
                         </th>
                     </tr>
@@ -376,7 +389,7 @@
                 <tbody id="people">
                     <tr id="blankperson" class="hide">
                         <td class="centered">
-                            <input type="radio" id="choosePerson" name="choosePerson" value="0" onclick="enableEditAndFill()">
+                            <input type="radio" id="choosePerson" name="choosePerson" value="0" onclick="AdminApp.enableEditAndFill()">
                         </td>
                         <td>Name2</td>
                     </tr>
@@ -429,7 +442,7 @@
                     <input id="Id" name="Id" class="hide" />
 
                     <div class="form-group">
-                        <a class="btn btn-default" onclick="updatePerson()">Submit</a>
+                        <a class="btn btn-default" onclick="AdminApp.updatePerson()">Submit</a>
                         <a class="btn btn-default" href="#close" title="Close">Cancel</a>
                     </div>
                     <div class="alert alert-danger" id="submitError">
