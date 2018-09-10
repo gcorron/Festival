@@ -19,6 +19,10 @@
             background-color: #dddddd;
         }
 
+        .hide {
+            display: none;
+        }
+
         .well {
             margin: 5px;
         }
@@ -79,61 +83,111 @@
             box-shadow: 1px 1px 3px #000;
         }
 
-        .close:hover {
-            background: #00d9ff;
-        }
+            .close:hover {
+                background: #00d9ff;
+            }
 
         .centered {
             text-align: center;
         }
 
         a.disabled {
-          opacity:50;
-          pointer-events: none;
+            opacity: 50;
+            pointer-events: none;
         }
-
     </style>
     <script>
         $(document).ready(function () {
             getPeople();
         });
 
-        function ShowCurrentTime() {
-            $.ajax({
-                type: "POST",
-                url: "Admin.aspx/GetCurrentTime",
-                data: '{name: "Greg" }',
-                contentType: "application/json; charset=utf-8",
-                dataType: "json",
-                success: OnSuccess,
-                failure: function (response) {
-                    alert(response.d);
-                }
-            });
-        }
-        function OnSuccess(response) {
-            alert(response.d);
+
+        function fillSlot() {
+            var locationRadio = $('input[name=chooseLocation]:checked')[0];
+            var personRadio = $('input[name=choosePerson]:checked')[0];
+
+            var locationId = locationRadio.value;
+            var personId = personRadio.value;
+
+            var locationName = locationRadio.parentElement.parentElement.childNodes[0].innerText();
+            var personName = personRadio.parentElement.parentElement.childNodes[1].innerText();
+            var oldPersonName = '';
+
         }
 
         function updatePerson() {
             $.ajax({
                 type: "POST",
                 url: "Admin.aspx/UpdatePerson",
-                data: InputJSON($('.form-control')),
+                data: inputJson(),
                 contentType: "application/json; charset=utf-8",
                 dataType: "json",
-                success: OnSuccess,
-                failure: function (response) {
-                    alert(response.d);
-                }
+                success: onUpdatePersonSuccess,
+                failure: onUpdatePersonFailure,
+                error: onUpdatePersonFailure
             });
+        }
 
+        function onUpdatePersonSuccess(response) {
+            person = JSON.parse(response.d);
+            storeAndRender2(person);
             location.hash = "#close";
         }
 
-        function addPerson() {
-            populatePerson(0);
+        function onUpdatePersonFailure(response) {
+
+            $('#serverError').text(parseResponse(response));
+            show('#submitError');
+
+            function parseResponse(response) {
+                if (response.d) {
+                    try {
+                        return JSON.parse(response.d);
+                    }
+                    catch (e) {
+                        return response.d;
+                    }
+                }
+                else if (response.responseJSON) {
+                    return response.responseJSON.Message;
+                }
+                else if (response.responseText) {
+                    return response.responseText;
+                }
+                else {
+                    return 'No response from server.';
+                }
+            }
+        }
+
+
+        function inputJson() {
+            person = JSON.parse(localStorage.getItem(personKey(0)));
+            for (var name in person) {
+                control = $('#' + name);
+                if (control) {
+                    if ($(control).attr('type') === 'checkbox')
+                        person[name] = control.prop('checked');
+                    else
+                        person[name] = control.val();
+                }
+            }
+            return JSON.stringify({ person: person });
+        }
+
+        function editPerson(mode) {
+            var id = (mode === 'A' ? 0 : $('input[name=choosePerson]:checked').val());
+            populatePerson(id);
+            hide('.no-new, #submitError');
             location.hash = "#modal";
+        }
+
+        function show(selector) {
+            $(selector).removeClass('hide');
+        }
+
+        function hide(selector) {
+            $(selector).addClass('hide');
         }
 
         function populatePerson(id) {
@@ -156,24 +210,13 @@
             }
         }
 
-        function appendPerson(person) {
-            var row = document.getElementById('blankperson'); // find row to copy
-            var table = document.getElementById('people'); // find table to append to
-            var clone = row.cloneNode(true); // copy children too
-            clone.getElementsByTagName('input')[0].setAttribute('value', person.id);
-            clone.getElementsByTagName('td')[1].textContent = person.FirstName + ' ' + person.LastName;
-            clone.removeAttribute("style"); //make it visible
-            clone.removeAttribute("id"); //avoid id collision
-            table.appendChild(clone); // add new row to end of tablebody
-        }
 
-
-        /* retrieve people from server and save to local storage */
+        /* retrieve people and locations from server, display, and save to local storage */
         function getPeople() {
             $.ajax({
                 type: "POST",
                 url: "Admin.aspx/GetPeople",
-                data: '{locationId: "' + $('#LocationId').val() + '"}',
+                data: '{}',
                 contentType: "application/json; charset=utf-8",
                 dataType: "json",
                 success: storeAndRenderPeople,
@@ -185,18 +228,77 @@
 
         function storeAndRenderPeople(response) {
             localStorage.clear();
-            var people = JSON.parse(response.d);
+
+            var array = JSON.parse(response.d)
+            var people = array[0];
+            var locations = array[1];
             people.forEach(storeAndRender2);
 
-            function storeAndRender2(person) {
-                if (person.Id)
-                    appendPerson(person);
-                localStorage.setItem(personKey(person.Id),JSON.stringify(person));
+            var table = document.getElementById('locations');
+            locations.forEach(displayLocation);
+
+
+            function displayLocation(location) {
+                var row = document.getElementById('blankLocation');
+                var clone = row.cloneNode(true);
+                clone.getElementsByTagName('td')[0].innerText = location.LocationName;
+                clone.getElementsByTagName('input')[0].setAttribute('id', location.LocationId);
+                clone.getElementsByTagName('td')[2].innerText = contactName(location.ContactId);
+                clone.removeAttribute('class');
+                table.append(clone);
             }
+
+        }
+
+        function contactName(id) {
+            if (id == null) {
+                return '';
+            }
+            person = localStorage.getItem(personKey(id));
+            return fullName(person);
+        }
+
+        function fullName(person) {
+            return person.FirstName + ' ' + person.LastName;
+        }
+
+        function storeAndRender2(person) {
+            if (person.Id)
+                appendPerson(person);
+            localStorage.setItem(personKey(person.Id), JSON.stringify(person));
+        }
+
+        function appendPerson(person) {
+            /* remove existing row if any*/
+            var row = document.getElementById(personKey(person.Id));
+            if (row) {
+                row.remove();
+            }
+
+            row = document.getElementById('blankperson'); // find blank to copy
+            var table = document.getElementById('people'); // find table body to append to
+            var clone = row.cloneNode(true); // true means get all descendant nodes too
+            clone.setAttribute('id', personKey(person.Id));
+            clone.getElementsByTagName('input')[0].setAttribute('value', person.Id);
+            clone.getElementsByTagName('td')[1].innerText = fullName(person);
+            clone.removeAttribute('class');
+            clone.setAttribute('name', (person.LastName + ' ' + person.FirstName).toLowerCase()); //for putting edits in proper order
+
+
+            for (var i = 0; (row = table.rows[i]); i++) {
+                if (row.getAttribute('name')) {
+                    if (clone.getAttribute('name') < row.getAttribute('name')) {
+                        row.insertAdjacentElement('beforebegin', clone);
+                        return;
+                    }
+                }
+            }
+
+            table.append(clone); // add new row to end of tablebody
         }
 
         function enableButton(buttonName) {
-             document.getElementById(buttonName).classList.remove('disabled');
+            document.getElementById(buttonName).classList.remove('disabled');
         }
 
         function enableFill() {
@@ -214,6 +316,10 @@
             return 'person' + id;
         }
 
+        function locationKey(id) {
+            return 'location' + id;
+        }
+
     </script>
 
     <asp:PlaceHolder runat="server" ID="ErrorMessage" Visible="false">
@@ -228,24 +334,23 @@
         <div class="col-sm-6 well">
             <h4><%: TheUser.LocationName %></h4>
             <table>
-                <tr>
-                    <th><%: TheUser.LocationDomain%></th>
-                    <th style="width:50px"><a id="fill" class="btn btn-xs btn-primary centered disabled"
-                        onclick="fillSlot()">Fill</a></th>
-                    <th><%: TheUser.LocationRoles %></th>
-                </tr>
-                <% foreach (var location in Locations)
-                    {%>
-                <tr>
-                    <td><%: location.LocationName %></td>
-                    <td class="centered">
-                        <input type="radio" id="chooseLocation" name="chooseLocation" value="<%:location.LocationId %>"
-                            onclick="enableFill()"></td>
-                    <td>
-                        <%: GetPersonName(location.ContactId)  %>
-                    </td>
-                </tr>
-                <% } %>
+                <thead>
+                    <tr>
+                        <th><%: TheUser.LocationDomain%></th>
+                        <th style="width: 50px"><a id="fill" class="btn btn-xs btn-primary centered disabled"
+                            onclick="fillSlot()">Fill</a></th>
+                        <th><%: TheUser.LocationRoles %></th>
+                    </tr>
+                </thead>
+                <tbody id="locations">
+                    <tr id="blankLocation" class="hide">
+                        <td></td>
+                        <td class="centered">
+                            <input type="radio" id="chooseLocation" value="0" onclick="enableFill()">
+                        </td>
+                        <td></td>
+                    </tr>
+                </tbody>
             </table>
         </div>
         <div class="col-sm-3 well">
@@ -255,22 +360,27 @@
                 </div>
             </div>
 
-            <table id="people">
-                <tr>
-                    <th style="width:50px; text-align:center"">
-                        <a class="btn btn-xs btn-primary disabled" id="edit" onclick="editPerson()">Edit</a></th>
-                    <th>Name
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 50px; text-align: center">
+                            <a class="btn btn-xs btn-primary disabled" id="edit" onclick="editPerson('E')">Edit</a>
+                        </th>
+                        <th>Name
                         <div class="col-sm-2 pull-right" style="margin-right: 10px;">
-                            <a class="btn btn-xs btn-primary" onclick="addPerson()">Add</a>
+                            <a class="btn btn-xs btn-primary" onclick="editPerson('A')">Add</a>
                         </div>
-                    </th>
-                </tr>
-                <tr id="blankperson" style="visibility: collapse">
-                    <td class="centered">
-                        <input type="radio" id="choosePerson" name="choosePerson" value="0" onclick="enableEditAndFill()">
-                    </td>
-                    <td>Name</td>
-                </tr>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody id="people">
+                    <tr id="blankperson" class="hide">
+                        <td class="centered">
+                            <input type="radio" id="choosePerson" name="choosePerson" value="0" onclick="enableEditAndFill()">
+                        </td>
+                        <td>Name2</td>
+                    </tr>
+                </tbody>
             </table>
         </div>
     </div>
@@ -300,7 +410,7 @@
                 </div>
                 <div class="col-sm-6">
                     <!-- RH half -->
-                    <div id="instrumentgroup" class="form-group">
+                    <div id="instrumentgroup" class="form-group hide">
                         <label class="control-label" for="instrument">Instrument Category:</label>
                         <select class="form-control" id="Instrument" name="Instrument">
                             <option value="-">Select ...</option>
@@ -311,15 +421,19 @@
                         </select>
                     </div>
 
-                    <div class="checkbox">
-                    <label><input type="checkbox" value="" name="Available" id="Available">Active</label>
+                    <div class="checkbox no-new">
+                        <label>
+                            <input type="checkbox" value="" name="Available" id="Available">Active</label>
                     </div>
 
-                    <input id="Id" name="Id" style="visibility: collapse" />
+                    <input id="Id" name="Id" class="hide" />
 
-                    <div class="form-group" style="position: relative; top: 50px">
-                        <a class="btn btn-default" onclick="UpdatePerson();">Submit</a>
+                    <div class="form-group">
+                        <a class="btn btn-default" onclick="updatePerson()">Submit</a>
                         <a class="btn btn-default" href="#close" title="Close">Cancel</a>
+                    </div>
+                    <div class="alert alert-danger" id="submitError">
+                        <strong>Server error! </strong><span id="serverError"></span>
                     </div>
                 </div>
             </div>

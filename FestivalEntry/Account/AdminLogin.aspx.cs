@@ -40,6 +40,18 @@ namespace FestivalEntry.Account
                             FormsAuthenticationTicket newTicket =
                                 new FormsAuthenticationTicket(ticket.Version, ticket.Name, ticket.IssueDate, ticket.Expiration, ticket.IsPersistent,
                                 theUser.RoleType + theUser.LocationId.ToString());
+
+                            string encryptedTicket = FormsAuthentication.Encrypt(newTicket);
+                            var cookie = new HttpCookie(FormsAuthentication.FormsCookieName, encryptedTicket)
+                            {
+                                HttpOnly = true,
+                                Secure = FormsAuthentication.RequireSSL,
+                                Path = FormsAuthentication.FormsCookiePath,
+                                Domain = FormsAuthentication.CookieDomain,
+                                Expires = newTicket.Expiration
+                            };
+                            Response.Cookies.Set(cookie);
+
                             Session["TheUser"] = theUser;
                         }
                         catch (Exception exc)

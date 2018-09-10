@@ -24,16 +24,11 @@ namespace FestivalEntry
         //    }
         //}
 
-        public static int UpdatePerson(int parentLocationId, Contact contact)
+        public static int UpdateContact(Contact contact)
         {
             using (IDbConnection connection = GetDBConnection())
             {
-                int ret = connection.Query<int>("UpdatePerson",
-                    new {parentLocationId,
-                        id = contact.Id,userName=contact.UserName,lastName=contact.LastName,
-                        firstName=contact.FirstName, email=contact.Email,phone=contact.Phone,
-                        available=contact.Available, instrument=contact.Instrument}
-                        , commandType: CommandType.StoredProcedure).Single<int>();
+                int ret = connection.Query<int>("UpdateContact",contact, commandType: CommandType.StoredProcedure).Single<int>();
                 return ret;
             }
 
@@ -42,7 +37,7 @@ namespace FestivalEntry
         {
             using (IDbConnection connection = GetDBConnection())
             {
-                return connection.Query<Contact>("SelectLocationsByParent", new { parentLocation }, commandType: CommandType.StoredProcedure).ToList<Contact>();
+                return connection.Query<Contact>("SelectContactsByParent", new { parentLocation }, commandType: CommandType.StoredProcedure).ToList<Contact>();
             }
         }
 
@@ -70,7 +65,7 @@ namespace FestivalEntry
         {
             using (IDbConnection connection = GetDBConnection())
             {
-                var resultList = connection.Query<string>("GenerateUserName",new { seed }).ToList<string>();
+                var resultList = connection.Query<string>("GenerateUserName",new { seed }, commandType: CommandType.StoredProcedure).ToList<string>();
                 if (resultList.Count != 1)
                     throw new RowNotInTableException();
                 return resultList[0];

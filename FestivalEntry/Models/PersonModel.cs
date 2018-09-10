@@ -12,9 +12,10 @@ namespace FestivalEntry.Models
         public string Phone { get; set; }
         public string LastName { get; set; }
         public string FirstName { get; set; }
-        public string UserName { get; } //auto generated when login created
+        public string UserName { get; set; }
         public string Instrument { get; set; }
         public Boolean Available { get; set; }
+        public int ParentLocation { get; set; }
 
 //        public string FullName { get => $"{FirstName} {LastName}"; }
     }
@@ -24,7 +25,6 @@ namespace FestivalEntry.Models
         public string LocationName { get; set; }
         public int LocationId { get; set; }
         public int? ContactId { get; set; }
-        public char LocationType { get; set; }
     }
 
     
