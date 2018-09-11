@@ -61,6 +61,12 @@ namespace FestivalEntry
         }
 
         [System.Web.Services.WebMethod]
+        public static void UpdateLocation(Location location)
+        {
+            SQLData.UpdateLocation(location);
+        }
+
+        [System.Web.Services.WebMethod]
         public static string GetPeople()
         {
             int locationId = LocationIdSecured;

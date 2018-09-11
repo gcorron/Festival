@@ -12,18 +12,14 @@ namespace FestivalEntry
     public class SQLData
     {
 
-        //public static int UpdateAdmin(FestivalUser user, int parentLocationId)
-        //{
-        //    using (IDbConnection connection = GetDBConnection())
-        //    {
-        //        var resultList = connection.Query<int>($"UpdateAdmin  @userName={user.UserName}, @email='{user.Email}', @phoneNumber='{user.PhoneNumber}'," +
-        //            $"@locationId={user.LocationId}, @locationName='{user.LocationName}, @locationType='{user.AdminRole}'," +
-        //            $", @LastName='{user.LastName}', @FirstName='{user.FirstName}', @parentLocation={parentLocationId}").ToList<int>();
+        public static void UpdateLocation(Location location)
+        {
+            using (IDbConnection connection = GetDBConnection())
+            {
+                connection.Execute("UpdateContact", location, commandType: CommandType.StoredProcedure);
+            }
 
-        //        return resultList[0]; // new locationID
-        //    }
-        //}
-
+        }
         public static int UpdateContact(Contact contact)
         {
             using (IDbConnection connection = GetDBConnection())

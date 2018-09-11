@@ -101,19 +101,41 @@
     var AdminApp = (function () {
 
         myStorage = new classStorage();
+        var pendingKey = 'pending';
         getPeople();
 
         return {
-            fillslot: function () {
-                var locationRadio = $('input[name=chooseLocation]:checked')[0];
-                var personRadio = $('input[name=choosePerson]:checked')[0];
+            fillSlot: function () {
+                pendingRow = $('input[name=chooseLocation]:checked').closest('tr');
 
-                var locationId = locationRadio.value;
-                var personId = personRadio.value;
+                var locationId = $('input[name=chooseLocation]:checked').val;
+                var personId = $('input[name=choosePerson]:checked').val;
 
-                var locationName = locationRadio.parentElement.parentElement.childNodes[0].innerText();
-                var personName = personRadio.parentElement.parentElement.childNodes[1].innerText();
-                var oldPersonName = '';
+                var location = myStorage.get(locationKey(locationId));
+                var locationName = location.LocationName;
+                var personName = fullName(myStorage.get(locationKey(personId)));
+                var message;
+                if (location.ContactId == null) {
+                    message = 'Assign ' + personName + ' to ' + locationName ? ';
+                }
+                else {
+                    var oldPersonName = fullName(myStorage.get(locationKey(location.ContactId)));
+                    message = 'Replace ' + oldPersonName + ' with ' + personName + ' for ' + locationName + '?';
+                }
+                if (confirm(message)) {
+                    location.ContactId = personId;
+                    myStorage.set(pendingKey, location);
+                    $.ajax({
+                        type: "POST",
+                        url: "Admin.aspx/UpdateLocation",
+                        data: JSON.stringify(location),
+                        contentType: "application/json; charset=utf-8",
+                        dataType: "json",
+                        success: onUpdateLocationSuccess,
+                        failure: AJAXFailure,
+                        error: AJAXFailure
+                    });
+                }
             },
 
             editPerson: function (mode) {
@@ -144,10 +166,18 @@
 
             enableEditAndFill: function () {
                 enableButton('edit');
-                enableFill();
+                this.enableFill();
             }
 
         };
+
+        function onUpdateLocationSuccess(response) {
+            location = myStorage.get(pendingKey);
+            myStorage.set(locationKey(location.LocationId));
+            myStorage.delete(pendingKey);
+            person = myStorage.get(personKey(location.ContactId));
+            $('#' + locationKey(location.LocationId)).children()[2].innerText(fullName(person));
+        }
 
         function onUpdatePersonSuccess(response) {
             person = JSON.parse(response.d);
@@ -159,24 +189,45 @@
             $('#serverError').text(parseResponse(response));
             show('#submitError');
 
-            function parseResponse(response) {
-                if (response.d) {
-                    try {
-                        return JSON.parse(response.d);
-                    }
-                    catch (e) {
-                        return response.d;
-                    }
+        }
+
+        /* retrieve people and locations from server, display, and save the objects  */
+        /* so that we don't have to go back to the server while this page is loaded */
+
+        function getPeople() {
+            $.ajax({
+                type: "POST",
+                url: "Admin.aspx/GetPeople",
+                data: '{}',
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: storeAndRenderPeople,
+                failure: AJAXFailure,
+                error: AJAXFailure
+            });
+        }
+
+        function AJAXFailure(response) {
+            alert(parseResponse(response));
+        }
+
+        function parseResponse(response) {
+            if (response.d) {
+                try {
+                    return JSON.parse(response.d);
                 }
-                else if (response.responseJSON) {
-                    return response.responseJSON.Message;
+                catch (e) {
+                    return response.d;
                 }
-                else if (response.responseText) {
-                    return response.responseText;
-                }
-                else {
-                    return 'No response from server.';
-                }
+            }
+            else if (response.responseJSON) {
+                return response.responseJSON.Message;
+            }
+            else if (response.responseText) {
+                return response.responseText;
+            }
+            else {
+                return 'No response from server.';
             }
         }
 
@@ -200,21 +251,6 @@
             }
         }
 
-        /* retrieve people and locations from server, display, and save to local storage */
-        function getPeople() {
-            $.ajax({
-                type: "POST",
-                url: "Admin.aspx/GetPeople",
-                data: '{}',
-                contentType: "application/json; charset=utf-8",
-                dataType: "json",
-                success: storeAndRenderPeople,
-                failure: function (response) {
-                    alert(response.d);
-                }
-            });
-        }
-
         function storeAndRenderPeople(response) {
             //localStorage.clear();
 
@@ -233,6 +269,7 @@
                 clone.getElementsByTagName('td')[0].innerText = location.LocationName;
                 clone.getElementsByTagName('input')[0].setAttribute('id', location.LocationId);
                 clone.getElementsByTagName('td')[2].innerText = contactName(location.ContactId);
+                clone.getElementsByTagName('tr')[0].setAttribute("id", locationKey(location.LocationId));
                 clone.removeAttribute('class');
                 table.append(clone);
             }
@@ -291,6 +328,10 @@
             this.get = function (key) {
                 return store[key];
             };
+
+            this.delete = function (key) {
+                delete store[key];
+            };
         }
 
 
@@ -341,6 +382,7 @@
         </p>
     </asp:PlaceHolder>
 
+    <!-- Locations -->
     <input id="LocationId" type="hidden" value="<%:TheUser.LocationId %>" />
     <div style="height: 20px"></div>
     <div class="row">
@@ -351,7 +393,7 @@
                     <tr>
                         <th><%: TheUser.LocationDomain%></th>
                         <th style="width: 50px"><a id="fill" class="btn btn-xs btn-primary centered disabled"
-                            onclick="fillSlot()">Fill</a></th>
+                            onclick="AdminApp.fillSlot()">Fill</a></th>
                         <th><%: TheUser.LocationRoles %></th>
                     </tr>
                 </thead>
@@ -359,13 +401,16 @@
                     <tr id="blankLocation" class="hide">
                         <td></td>
                         <td class="centered">
-                            <input type="radio" id="chooseLocation" value="0" onclick="AdminApp.enableFill()">
+                            <input type="radio" id="chooseLocation" name="chooseLocation" value="0" onclick="AdminApp.enableFill()">
                         </td>
                         <td></td>
                     </tr>
                 </tbody>
             </table>
         </div>
+
+
+        <!-- People -->
         <div class="col-sm-3 well">
             <div class="row">
                 <div class="col-sm-4">
@@ -398,6 +443,7 @@
         </div>
     </div>
 
+    <!-- Edit People modal -->
     <div id="modal" class="modalDialog">
         <div class="row">
             <!-- not visible until the Add button is clicked -->
