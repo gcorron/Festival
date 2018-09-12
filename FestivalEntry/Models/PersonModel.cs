@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
 
 namespace FestivalEntry.Models
 {
@@ -23,7 +20,7 @@ namespace FestivalEntry.Models
     public struct Location
     { 
         public string LocationName { get; set; }
-        public int LocationId { get; set; }
+        public int Id { get; set; }
         public int? ContactId { get; set; }
     }
 

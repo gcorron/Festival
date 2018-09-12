@@ -16,7 +16,7 @@ namespace FestivalEntry
         {
             using (IDbConnection connection = GetDBConnection())
             {
-                connection.Execute("UpdateContact", location, commandType: CommandType.StoredProcedure);
+                connection.Execute("UpdateLocation", location, commandType: CommandType.StoredProcedure);
             }
 
         }
