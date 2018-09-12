@@ -1,52 +1,100 @@
-﻿var AdminApp = (function () {
+﻿"use strict";
 
-    myStorage = new classStorage();
+var AdminApp = (function () {
+
+    $(document).ready(setupPopover());
+    var myStorage = new classStorage();
     var pendingLocation;
+    var personAvailIcon = '<span class="glyphicon glyphicon-star-empty"></span>';
+    var personBusyIcon = '<span class="glyphicon glyphicon-star"></span>';
 
     getData();
 
     return {
-        fillSlot: function () {
-            pendingRow = $('input[name=chooseLocation]:checked').closest('tr');
+        fillOrVacate: function (elt) {
+            var person;
+            var location = $(elt).data('lid');
+            var keys = {};
+            var tlocation;
 
-            var locationId = $('input[name=chooseLocation]:checked').val();
-            var personId = $('input[name=choosePerson]:checked').val();
-
-            var location = myStorage.getLocation(locationId);
-            var locationName = location.LocationName;
-            var personName = fullName(myStorage.getPerson(personId));
-            var message;
-            if (location.ContactId == null) {
-                message = 'Assign ' + personName + ' to ' + locationName + '?';
+            if (assignmentMode()) {
+                cancelAssignmentMode();
+                return;
+            }
+            if (location.ContactId) {
+                person = myStorage.getPerson(location.ContactId);
+                if (confirm('Remove ' + fullName(person) + ' from ' + location.LocationName + '?')) {
+                    location.ContactId = 0;
+                    pendingLocation = location;
+                    updateLocation();
+                }
             }
             else {
-                var oldPersonName = fullName(myStorage.getPerson(location.ContactId));
-                message = 'Replace ' + oldPersonName + ' with ' + personName + ' for ' + locationName + '?';
-            }
-            if (confirm(message)) {
-                location.ContactId = personId;
-                pendingLocation = location;
-                $.ajax({
-                    type: "POST",
-                    url: "Admin.aspx/UpdateLocation",
-                    data: JSON.stringify({ location: location }),
-                    contentType: "application/json; charset=utf-8",
-                    dataType: "json",
-                    success: onUpdateLocationSuccess,
-                    failure: onAJAXFailure,
-                    error: onAJAXFailure
-                });
+                //check how many are eligibile to fill
+
+                myStorage.begin(); //create keys to search
+                while ((tlocation = myStorage.nextLocation())) {
+                    if (tlocation.ContactId) {
+                        keys['p' + tlocation.ContactId] = 'Y';
+                    }
+                }
+
+                // search for available people not assigned
+                myStorage.begin();
+
+                var count = 0;
+                while ((person = myStorage.nextPerson()) && count <= 2) {
+                    if (person.Available && !keys['p' + person.Id]) {
+                        eligibleName = fullName(person);
+                        count++;
+                    }
+                }
+
+                switch (count) {
+                    case 0: {
+                        showModal('Fill vacancy', 'No people are eligile right now.\nA person can only fill one position, and must have available status.\n' +
+                            'Add a person or edit one who is not assigned,\nchanging their available status.');
+                        return;
+                    }
+                    case 1: {
+                        if (confirm('One person is eligible right now. Assign ' + eligibleName + ' to ' + location.LocationName + '?')) {
+                            return;
+                        }
+                        return;
+                    }
+                    default: {
+                        //showModal('Fill vacancy', 'Select a person to fill this position, then click "Assign"');
+                        changeAlertBox('#locationsAlert', 'Now, select a person with a ' + personAvailIcon + ' or click the cancel link.');
+                        hide('#peopleAlert');
+                        hide('#addPerson');
+                        $(elt).children('td')[1].append($('#cancelAssignment > a')[0]); //move the the cancel link out of the invisible div
+                        pendingLocation = location;
+                        return;
+                    }
+                }
             }
         },
 
-        editPerson: function (mode) {
-            var id = (mode === 'A' ? 0 : $('input[name=choosePerson]:checked').val());
-            populatePerson(id);
-            hide('.no-new, #submitError');
-            if (mode === 'E') {
-                show('.no-new');
+        editPerson: function (id) {
+            var person;
+
+            if (assignmentMode()) {
+                person = myStorage.getPerson(id);
+                if (confirm('Assign ' + fullName(person) + ' to ' + pendingLocation.LocationName + '?')) {
+                    pendingLocation.ContactId = id;
+                    cancelAssignmentMode();
+                    updateLocation();
+                }
+                return;
             }
-            location.hash = "#modal";
+            else {
+                populatePerson(id);
+                hide('.no-new, #submitError');
+                if (id !== 0) {
+                    show('.no-new');
+                }
+                location.hash = "modalEdit";
+            }
         },
 
         updatePerson: function () {
@@ -60,20 +108,22 @@
                 failure: onUpdatePersonFailure,
                 error: onUpdatePersonFailure
             });
-        },
-
-        enableFill: function () {
-            if ($('input[name="chooseLocation"]:checked').val())
-                if ($('input[name="choosePerson"]:checked').val())
-                    enableButton('fill');
-        },
-
-        enableEditAndFill: function () {
-            enableButton('edit');
-            this.enableFill();
         }
 
     };
+
+    function updateLocation() {
+        $.ajax({
+            type: "POST",
+            url: "Admin.aspx/UpdateLocation",
+            data: JSON.stringify({ location: pendingLocation }),
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: onUpdateLocationSuccess,
+            failure: onAJAXFailure,
+            error: onAJAXFailure
+        });
+    }
 
     function onUpdateLocationSuccess(response) {
         myStorage.setLocation(pendingLocation);
@@ -81,16 +131,23 @@
     }
 
     function onUpdatePersonSuccess(response) {
-        person = JSON.parse(response.d);
+        var person = JSON.parse(response.d);
         myStorage.setPerson(person);
         renderTables();
-        location.hash = "#close";
+        location.hash = "#closemodal";
     }
 
     function onUpdatePersonFailure(response) {
         $('#serverError').text(parseResponse(response));
         show('#submitError');
 
+    }
+
+    function cancelAssignmentMode() {
+        $('#cancelAssignment').append($('#locations').find('a')[0]); // move the cancel link back into invisible div
+        restoreAlertBox('#locationsAlert');
+        show('#peopleAlert');
+        show('#addPerson');
     }
 
     /* retrieve people and locations from server, display, and save the objects  */
@@ -136,8 +193,11 @@
 
     function populatePerson(id) {
         var person = myStorage.getPerson(id);
+        var mess;
+        var control;
+
         if (!person) {
-            var mess =  + 'person ' + id + ' not found!';
+            mess = + 'person ' + id + ' not found!';
             alert(mess);
             throw mess;
         }
@@ -164,11 +224,14 @@
     }
 
     function renderTables() {
-        var row, tr,table, clone;
-        var person, location;
+        var row;
+        var tr;
+        var table;
+        var clone;
+        var anchor;
+        var person;
+        var location;
         var assigned = {};
-        var personAvailIcon = '<span class="glyphicon glyphicon-star-empty"></span>'
-        var personBusyIcon = '<span class="glyphicon glyphicon-star"></span>'
 
         // erase any existing rows, except the blank template row
         $('#locations>tr').not('#blankLocation').remove();
@@ -185,10 +248,10 @@
             }
             clone = row.cloneNode(true);
             clone.getElementsByTagName('td')[0].innerText = location.LocationName;
-            clone.getElementsByTagName('input')[0].setAttribute('value', location.Id);
-            clone.getElementsByTagName('td')[2].innerText = contactName(location.ContactId);
+            clone.getElementsByTagName('td')[1].innerText = contactName(location.ContactId);
             clone.setAttribute('id', location.key);
-            clone.removeAttribute('class');
+            $(clone).data('lid', location);
+            show(clone);
             table.append(clone);
         }
 
@@ -200,13 +263,15 @@
         while ((person = myStorage.nextPerson()) !== null) {
             clone = row.cloneNode(true); // true means get all descendant nodes too
             clone.setAttribute('id', person.key);
-            clone.getElementsByTagName('input')[0].setAttribute('value', person.Id);
-            clone.getElementsByTagName('td')[1].innerText = fullName(person);
-            clone.getElementsByTagName('td')[2].innerHTML = assigned[person.Id] ? personBusyIcon : person.Available ? personAvailIcon : '';
+            anchor = clone.getElementsByTagName('a')[0];
+            anchor.innerText = fullName(person);
+            anchor.setAttribute('title', person.Email + '  ph. ' + person.Phone); //should be 'data-content' but doesn't work!
+            $(anchor).data("pid", person.Id);
+            clone.getElementsByTagName('td')[1].innerHTML = assigned[person.Id] ? personBusyIcon : person.Available ? personAvailIcon : '';
 
-            clone.removeAttribute('class');
+            show(clone);
             clone.setAttribute('name', (person.LastName + ' ' + person.FirstName).toLowerCase()); //for putting edits in proper order
-            
+
             for (var i = 0; (tr = table.rows[i]); i++) {
                 if (tr.getAttribute('name')) {
                     if (clone.getAttribute('name') < tr.getAttribute('name')) {
@@ -218,6 +283,10 @@
         }
     }
 
+    function setupPopover() {
+        $('[data-toggle="popover"]').popover(); // enable popover anchor for person
+    }
+
     function enableButton(buttonName) {
         document.getElementById(buttonName).classList.remove('disabled');
     }
@@ -227,33 +296,35 @@
         var index;
         var keyz;
 
-        this.begin = function () {
-            keyz = Object.keys(dict);
-            index = 0;
-        };
+        return {
+            begin: function () {
+                keyz = Object.keys(dict);
+                index = 0;
+            },
 
-        this.nextPerson = function () {
-            return nextObject('p');
-        };
+            nextPerson: function () {
+                return nextObject('p');
+            },
 
-        this.nextLocation = function () {
-            return nextObject('l');
-        };
+            nextLocation: function () {
+                return nextObject('l');
+            },
 
-        this.setPerson = function (person) {
-            set(person.Id===0 ? 'P':'p' + person.Id, person); // for blank person, not included in list
-        };
+            setPerson: function (person) {
+                set((person.Id === 0 ? 'P' : 'p') + person.Id, person); // P for blank person, so nextPerson does not return it
+            },
 
-        this.getPerson = function (id) {
-            return get(id === 0 ? 'P': 'p' + id);
-        };
+            getPerson: function (id) {
+                return get((id === 0 ? 'P' : 'p') + id);
+            },
 
-        this.setLocation = function (location) {
-            set('l' + location.Id, location);
-        };
-         
-        this.getLocation = function (id) {
-            return get('l' + id);
+            setLocation: function (location) {
+                set('l' + location.Id, location);
+            },
+
+            getLocation: function (id) {
+                return get('l' + id);
+            }
         };
 
         function set(key, datum) {
@@ -270,7 +341,6 @@
                 configurable: true
             });
             return o;
-
         }
 
         function nextObject(keytype) {
@@ -286,9 +356,10 @@
         }
     }
 
-
     function formPersonJson() {
-        person = myStorage.getPerson(0); //just to get the property names
+        var control;
+        var person = myStorage.getPerson(0); //just to get the property names
+
         for (var name in person) {
             control = $('#' + name);
             if (control) {
@@ -297,10 +368,37 @@
                 else
                     person[name] = control.val();
             }
-
         }
         return JSON.stringify({ person: person });
     }
+
+    function changeAlertBox(selector, message) {
+        var o = $(selector);
+        // save the original message to restore later
+        if (!(o.data('defaultMessage'))) {
+            o.data('defaultMessage', o.text());
+        }
+        o.html(message);
+        o.toggleClass('alert-info alert-warning');
+    }
+
+    function restoreAlertBox(selector) {
+        var o = $(selector);
+        var message = o.data('defaultMessage');
+        o.text(message);
+        o.toggleClass('alert-info alert-warning');
+    }
+
+    function assignmentMode() {
+        return ($('#cancelAssignment').has('a').length === 0);
+    }
+
+    function showModal(heading, message) {
+        $('#infoModal h4').text(heading);
+        $('#infoModal p').text(message);
+        $("#infoModal").modal();
+    }
+
 
     function show(selector) {
         $(selector).removeClass('hide');
@@ -311,15 +409,15 @@
     }
 
     function contactName(id) {
-        if (id == null) {
-            return '';
+        var person;
+        if (id) {
+            person = myStorage.getPerson(id);
+            return fullName(person);
         }
-        person = myStorage.getPerson(id);
-        return fullName(person);
+        return '';
     }
 
     function fullName(person) {
         return person.FirstName + ' ' + person.LastName;
     }
-
 })();

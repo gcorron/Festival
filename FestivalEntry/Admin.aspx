@@ -15,31 +15,25 @@
     <div style="height: 20px"></div>
     <div class="row">
         <div class="col-sm-6 well">
-            <h4><%: TheUser.LocationName %></h4>
+            <div class="row">
+                <div class="col-sm-4">
+                    <h4><%: TheUser.LocationName %></h4>
+                </div>
+                <div class="col-sm-2"></div>
+                <div id="locationsAlert" class="col-sm-5 alert alert-info">
+                    Click on any row to fill or vacate position.
+                </div>
+            </div>
             <table>
                 <thead>
                     <tr>
                         <th><%: TheUser.LocationDomain%></th>
-                        <th style="width: 50px">
-                            <div class="btn-group" role="group">
-                                <button type="button" class="btn btn-primary btn-xs dropdown-toggle" data-toggle="dropdown">
-                                    Change
-                                </button>
-                                <div class="dropdown-menu">
-                                    <a id="fill" class="dropdown-item disabled" onclick="AdminApp.fillSlot()">Fill</a>
-                                    <a id="remove" class="dropdown-item disabled" onclick="AdminApp.fillSlot()">Remove</a>
-                                </div>
-                            </div>
-                        </th>
                         <th><%: TheUser.LocationRoles %></th>
                     </tr>
                 </thead>
                 <tbody id="locations">
-                    <tr id="blankLocation" class="hide">
+                    <tr id="blankLocation" class="hide mousePointer" onclick="AdminApp.fillOrVacate(this);">
                         <td></td>
-                        <td class="centered">
-                            <input type="radio" id="chooseLocation" name="chooseLocation" value="0" onclick="AdminApp.enableFill()">
-                        </td>
                         <td></td>
                     </tr>
                 </tbody>
@@ -47,28 +41,37 @@
         </div>
 
         <!-- People -->
-        <div class="col-sm-3 well">
-            <h4>People</h4>
+        <div class="col-sm-4 well">
+            <div class="row">
+                <div class="col-sm-4">
+                    <h4>People</h4>
+                </div>
+                <div class="col-sm-1"></div>
+                <div id="peopleAlert" class="col-sm-7 alert alert-info">
+                    Hover over name for details, or<br />
+                    click name to edit.
+                </div>
+            </div>
+
             <table>
                 <thead>
                     <tr>
-                        <th style="width: 50px; text-align: center">
-                            <div class="btn-group" role="group">
-                                <a class="btn btn-xs btn-primary disabled" id="edit" onclick="AdminApp.editPerson('E')">Edit</a>
-                                <a class="btn btn-xs btn-primary" onclick="AdminApp.editPerson('A')">Add</a>
+                        <th>
+                            <div class="row">
+                                <div class="col-sm-4">Person</div>
+                                <div class="col-sm-4 pull-right">
+                                    <a id="addPerson" class="btn btn-xs btn-primary" onclick="AdminApp.editPerson(0);">Add New</a>
+                                </div>
                             </div>
                         </th>
-                        <th>Name
-                        </th>
-                        <th class="text-right"></th>
+                        <th class="centered"><span class="glyphicon glyphicon-question-sign"></span></th>
                     </tr>
                 </thead>
                 <tbody id="people">
                     <tr id="blankPerson" class="hide">
-                        <td class="centered">
-                            <input type="radio" id="choosePerson" name="choosePerson" value="0" onclick="AdminApp.enableEditAndFill()">
+                        <td>
+                            <a onclick="AdminApp.editPerson($(this).data('pid'));" title="Contact info" data-toggle="popover" data-trigger="hover" data-content="Some content">Hover over me</a>
                         </td>
-                        <td>Name2</td>
                         <td class="centered">*</td>
                     </tr>
                 </tbody>
@@ -77,7 +80,7 @@
     </div>
 
     <!-- Edit People modal -->
-    <div id="modal" class="modalDialog">
+    <div id="modalEdit" class="modalDialog">
         <div class="row">
             <!-- not visible until the Add button is clicked -->
             <div class="well">
@@ -121,8 +124,8 @@
                     <input id="Id" name="Id" class="hide" />
 
                     <div class="form-group">
-                        <a class="btn btn-default" onclick="AdminApp.updatePerson()">Submit</a>
-                        <a class="btn btn-default" href="#close" title="Close">Cancel</a>
+                        <a class="btn btn-default" onclick="AdminApp.updatePerson()">Save</a>
+                        <a class="btn btn-default" href="#closemodal" title="Close">Cancel</a>
                     </div>
                     <div class="alert alert-danger" id="submitError">
                         <strong>Server error! </strong><span id="serverError"></span>
@@ -131,5 +134,27 @@
             </div>
         </div>
     </div>
+    <!-- Modal -->
+    <div class="modal fade" id="infoModal" role="dialog">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Modal Header</h4>
+                </div>
+                <div class="modal-body">
+                    <p>This is a small modal.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="cancelAssignment" class="hide">
+        <a>&lt; Cancel this assignment ></a>
+    </div>
+
+
     <div class="clear"></div>
 </asp:Content>
