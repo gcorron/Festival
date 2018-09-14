@@ -4,7 +4,7 @@ AS
 BEGIN
 
 
-	select LocationName, id as LocationId,contactId
+	select LocationName, id,contactId
 	from Location
 	where ParentLocation=@parentLocation
 		and LocationType>'A'

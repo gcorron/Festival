@@ -1,5 +1,5 @@
 ﻿
-CREATE PROCEDURE UpdateLocation @id int,  @contactId int
+CREATE PROCEDURE [dbo].[UpdateLocation] @id int,  @contactId int, @locationName varchar(50)
 AS
 BEGIN
 	update location set ContactId=@contactId

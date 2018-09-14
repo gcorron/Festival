@@ -20,6 +20,14 @@ namespace FestivalEntry
             }
 
         }
+        public static void DeleteContact(int id)
+        {
+            using (IDbConnection connection = GetDBConnection())
+            {
+                connection.Execute("DeleteContact", new { id }, commandType: CommandType.StoredProcedure);
+            }
+
+        }
         public static int UpdateContact(Contact contact)
         {
             using (IDbConnection connection = GetDBConnection())

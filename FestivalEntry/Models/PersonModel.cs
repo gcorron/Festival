@@ -14,17 +14,17 @@ namespace FestivalEntry.Models
         public Boolean Available { get; set; }
         public int ParentLocation { get; set; }
 
-//        public string FullName { get => $"{FirstName} {LastName}"; }
+        //        public string FullName { get => $"{FirstName} {LastName}"; }
     }
 
     public struct Location
-    { 
+    {
         public string LocationName { get; set; }
         public int Id { get; set; }
         public int? ContactId { get; set; }
     }
 
-    
+
     public struct LoginPerson
     {
         public string LastName { get; set; }
@@ -37,36 +37,61 @@ namespace FestivalEntry.Models
         public string FullName { get => $"{FirstName} {LastName}"; }
         public char RoleType { get; set; }
 
-        public string LocationDomain
+        public bool IsUnassigned { get => RoleType == '-'; }
+
+        public string LocationDomain { get => RoleScope(LocationRank); }
+        public string LocationSlot { get => RoleScope(LocationRank+1); }
+
+
+        private int LocationRank
         {
             get
             {
                 switch (RoleType)
                 {
-                    case 'A': return "Division";
-                    case 'B': return "Region";
-                    case 'C': return "District";
-                    case 'D': return "Teacher";
-                    case 'E': return "Teacher";
-                    default: return "---";
+                    case 'A': return 1;
+                    case 'B': return 2;
+                    case 'C': return 3;
+                    case 'D': return 4;
+                    case 'E': return 5;
+                    case 'T': return 6;
+                    default: throw new ArgumentOutOfRangeException("RoleType is not valid.");
                 }
             }
         }
-        public string LocationRoles
+        public string LocationRole { get => RoleName(LocationRank); }
+        public string LocationRoleAssignments { get => RoleName(LocationRank+1); }
+
+
+        private string RoleName(int rank)
         {
-            get
+            switch (rank)
             {
-                switch (RoleType)
-                {
-                    case 'A': return "Director";
-                    case 'B': return "Coordinator";
-                    case 'C': return "Chair";
-                    case 'D': return "Teacher";
-                    case 'E': return "Teacher";
-                    default: return "---";
-                }
+                case 1: return "Admin";
+                case 2: return "Director";
+                case 3: return "Manager";
+                case 4: return "Coordinator";
+                case 5: return "Chair";
+                case 6: return "Teacher";
+                default: return "---";
+            }
+
+        }
+
+        private string RoleScope(int rank)
+        {
+            switch (rank)
+            {
+                case 1: return "Domain";
+                case 2: return "Division";
+                case 3: return "Region";
+                case 4: return "Metro";
+                case 5: return "District";
+                case 6: return "Studio";
+                default: return "---";
             }
         }
+
         public string AdminTitle
         {
             get

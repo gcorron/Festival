@@ -7,14 +7,26 @@ using Microsoft.AspNet.Identity.Owin;
 using Microsoft.Owin;
 using Microsoft.Owin.Security;
 using FestivalEntry.Models;
+using System.Configuration;
 
 namespace FestivalEntry
 {
+
     public class EmailService : IIdentityMessageService
     {
+        private readonly System.Net.Mail.SmtpClient client;
+
+        public EmailService()
+        {
+
+            client = new System.Net.Mail.SmtpClient("localhost")
+            {
+                Port = 25
+            };
+        }
+
         public Task SendAsync(IdentityMessage message)
         {
-            // Plug in your email service here to send an email.
             return Task.FromResult(0);
         }
     }
@@ -87,7 +99,8 @@ namespace FestivalEntry
     public class ApplicationSignInManager : SignInManager<ApplicationUser, string>
     {
         public ApplicationSignInManager(ApplicationUserManager userManager, IAuthenticationManager authenticationManager) :
-            base(userManager, authenticationManager) { }
+            base(userManager, authenticationManager)
+        { }
 
         public override Task<ClaimsIdentity> CreateUserIdentityAsync(ApplicationUser user)
         {

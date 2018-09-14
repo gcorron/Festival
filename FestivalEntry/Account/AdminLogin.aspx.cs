@@ -34,6 +34,11 @@ namespace FestivalEntry.Account
                         try
                         {
                             theUser = SQLData.GetLoginPerson(UserName.Text);
+                            if (theUser.IsUnassigned) {
+                                FailureText.Text = "You currently have no role assigned. For questions, contact the administrator in charge of your area.";
+                                ErrorMessage.Visible = true;
+                                return;
+                            }
 
                             HttpCookie authCookie = FormsAuthentication.GetAuthCookie(UserName.Text, RememberMe.Checked);
                             FormsAuthenticationTicket ticket = FormsAuthentication.Decrypt(authCookie.Value);

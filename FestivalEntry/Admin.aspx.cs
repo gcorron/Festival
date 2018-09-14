@@ -12,6 +12,7 @@ using Microsoft.AspNet.Identity.Owin;
 using Owin;
 using System.Web.Security;
 using System.Web.Configuration;
+using System.Threading;
 
 namespace FestivalEntry
 {
@@ -84,6 +85,14 @@ namespace FestivalEntry
 
             JavaScriptSerializer json_serializer = new JavaScriptSerializer();
             return json_serializer.Serialize(returnArray);
+        }
+
+        [System.Web.Services.WebMethod]
+        public static string DeletePerson(Contact person)
+        {
+            SQLData.DeleteContact(person.Id);
+            JavaScriptSerializer json_serializer = new JavaScriptSerializer();
+            return json_serializer.Serialize(person);
         }
 
         [System.Web.Services.WebMethod]

@@ -1,21 +1,40 @@
 ﻿"use strict";
 
+$(document).ready(function () {
+
+    $(document).ajaxStart(function () {
+        document.body.style.cursor = 'wait';
+    });
+
+    $(document).ajaxStop(function () {
+        document.body.style.cursor = 'default';
+    });
+
+});
+
 var AdminApp = (function () {
 
-    $(document).ready(setupPopover());
-    var myStorage = new classStorage();
-    var pendingLocation;
+
     var personAvailIcon = '<span class="glyphicon glyphicon-star-empty"></span>';
     var personBusyIcon = '<span class="glyphicon glyphicon-star"></span>';
+    $('#starsKey').attr('data-content', '<p>' + personBusyIcon + ' means the person has been assigned to one of your locations.</p>' +
+        '<p>' + personAvailIcon + ' means the person has not been assigned.</p>' +
+        '<p> No star means the person has been designated not available to be assigned.</p>');
+
+    var myStorage = new classStorage();
+    var pendingLocation;
 
     getData();
 
     return {
+
+
         fillOrVacate: function (elt) {
             var person;
             var location = $(elt).data('lid');
             var keys = {};
             var tlocation;
+            var eligiblePerson;
 
             if (assignmentMode()) {
                 cancelAssignmentMode();
@@ -24,9 +43,7 @@ var AdminApp = (function () {
             if (location.ContactId) {
                 person = myStorage.getPerson(location.ContactId);
                 if (confirm('Remove ' + fullName(person) + ' from ' + location.LocationName + '?')) {
-                    location.ContactId = 0;
-                    pendingLocation = location;
-                    updateLocation();
+                    updateLocation(0);
                 }
             }
             else {
@@ -45,28 +62,29 @@ var AdminApp = (function () {
                 var count = 0;
                 while ((person = myStorage.nextPerson()) && count <= 2) {
                     if (person.Available && !keys['p' + person.Id]) {
-                        eligibleName = fullName(person);
+                        eligiblePerson = person;
                         count++;
                     }
                 }
 
                 switch (count) {
                     case 0: {
-                        showModal('Fill vacancy', 'No people are eligile right now.\nA person can only fill one position, and must have available status.\n' +
+                        showInfoModal('Fill vacancy', 'No people are eligile right now.\nA person can only fill one position, and must have available status.\n' +
                             'Add a person or edit one who is not assigned,\nchanging their available status.');
                         return;
                     }
                     case 1: {
-                        if (confirm('One person is eligible right now. Assign ' + eligibleName + ' to ' + location.LocationName + '?')) {
+                        if (confirm('One person is eligible right now. Assign ' + fullName(eligiblePerson) + ' to ' + location.LocationName + '?')) {
+                            pendingLocation = location;
+                            updateLocation(eligiblePerson.Id);
                             return;
                         }
                         return;
                     }
                     default: {
-                        //showModal('Fill vacancy', 'Select a person to fill this position, then click "Assign"');
                         changeAlertBox('#locationsAlert', 'Now, select a person with a ' + personAvailIcon + ' or click the cancel link.');
-                        hide('#peopleAlert');
-                        hide('#addPerson');
+                        changeAlertBox('#peopleAlert', 'You are selecting a person for ' + location.LocationName + '.');
+                        $('#addPerson').hide();
                         $(elt).children('td')[1].append($('#cancelAssignment > a')[0]); //move the the cancel link out of the invisible div
                         pendingLocation = location;
                         return;
@@ -77,23 +95,75 @@ var AdminApp = (function () {
 
         editPerson: function (id) {
             var person;
+            var location;
+            var isAssigned = isPersonAssigned(); //nested function, also sets location if assigned
+            var canDelete = !isAssigned && id !== 0;
 
             if (assignmentMode()) {
                 person = myStorage.getPerson(id);
+
+                if (!person.Available) {
+                    showInfoModal('Assign Person', fullName(person) + ' does not have Available status. (You can change that.)');
+                    return;
+                }
+
+                if (isAssigned) {
+                    showInfoModal('Assign Person', fullName(person) + ' is already assigned to ' + location.LocationName + '.');
+                }
+
                 if (confirm('Assign ' + fullName(person) + ' to ' + pendingLocation.LocationName + '?')) {
-                    pendingLocation.ContactId = id;
-                    cancelAssignmentMode();
-                    updateLocation();
+                    updateLocation(id);
                 }
                 return;
             }
             else {
-                populatePerson(id);
-                hide('.no-new, #submitError');
+                populatePersonForm(id);
+                $('.no-new, #submitError').hide();
+
                 if (id !== 0) {
-                    show('.no-new');
+                    $('.no-new').show();
                 }
-                location.hash = "modalEdit";
+
+                if (canDelete) {
+                    $('#deleteButton').removeAttr('disabled');
+                }
+                else {
+                    $('#deleteButton').attr('disabled', 'disabled');
+                }
+
+                $('#instrumentGroup').hide();
+                if ($('#RoleType').val() === 'E') {
+                    $('#instrumentGroup').show();
+                }
+            }
+            $("#modalEdit").modal();
+
+            function isPersonAssigned() {
+                myStorage.begin();
+                while ((location = myStorage.nextLocation())) {
+                    if (location.ContactId === id) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+
+
+        },
+
+        deletePerson: function () {
+            if (confirm('Delete, are you sure?')) {
+                $.ajax({
+                    type: "POST",
+                    url: "Admin.aspx/DeletePerson",
+                    data: CollectJsonFormData(),
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    success: onDeletePersonSuccess,
+                    failure: onUpdatePersonFailure,
+                    error: onUpdatePersonFailure
+                });
             }
         },
 
@@ -101,7 +171,7 @@ var AdminApp = (function () {
             $.ajax({
                 type: "POST",
                 url: "Admin.aspx/UpdatePerson",
-                data: formPersonJson(),
+                data: CollectJsonFormData(),
                 contentType: "application/json; charset=utf-8",
                 dataType: "json",
                 success: onUpdatePersonSuccess,
@@ -112,7 +182,10 @@ var AdminApp = (function () {
 
     };
 
-    function updateLocation() {
+    function updateLocation(contactId) {
+        pendingLocation.ContactId = contactId;
+        cancelAssignmentMode();
+
         $.ajax({
             type: "POST",
             url: "Admin.aspx/UpdateLocation",
@@ -134,24 +207,28 @@ var AdminApp = (function () {
         var person = JSON.parse(response.d);
         myStorage.setPerson(person);
         renderTables();
-        location.hash = "#closemodal";
+        $('#modalEdit').modal('hide');
+    }
+
+    function onDeletePersonSuccess(response) {
+        var person = JSON.parse(response.d);
+        myStorage.deletePerson(person.Id);
+        renderTables();
+        $('#modalEdit').modal('hide');
     }
 
     function onUpdatePersonFailure(response) {
         $('#serverError').text(parseResponse(response));
-        show('#submitError');
+        $('#submitError').show();
 
     }
 
     function cancelAssignmentMode() {
         $('#cancelAssignment').append($('#locations').find('a')[0]); // move the cancel link back into invisible div
         restoreAlertBox('#locationsAlert');
-        show('#peopleAlert');
-        show('#addPerson');
+        restoreAlertBox('#peopleAlert');
+        $('#addPerson').show();
     }
-
-    /* retrieve people and locations from server, display, and save the objects  */
-    /* so that we don't have to go back to the server while this page is loaded */
 
     function getData() {
         $.ajax({
@@ -162,10 +239,10 @@ var AdminApp = (function () {
             dataType: "json",
             success: onGetDataSuccess,
             failure: onAJAXFailure,
-            error: onAJAXFailure
+            error: onAJAXFailure,
+            global: true
         });
     }
-
 
     function onAJAXFailure(response) {
         alert(parseResponse(response));
@@ -191,7 +268,7 @@ var AdminApp = (function () {
         }
     }
 
-    function populatePerson(id) {
+    function populatePersonForm(id) {
         var person = myStorage.getPerson(id);
         var mess;
         var control;
@@ -230,6 +307,7 @@ var AdminApp = (function () {
         var clone;
         var anchor;
         var person;
+        var people;
         var location;
         var assigned = {};
 
@@ -251,46 +329,61 @@ var AdminApp = (function () {
             clone.getElementsByTagName('td')[1].innerText = contactName(location.ContactId);
             clone.setAttribute('id', location.key);
             $(clone).data('lid', location);
-            show(clone);
-            table.append(clone);
+            addClone();
         }
 
         // add people
-        myStorage.begin();
+        people = sortedPeople();
         row = document.getElementById('blankPerson');
         table = document.getElementById('people'); // find table body to append to
 
-        while ((person = myStorage.nextPerson()) !== null) {
+        for (var i = 0; i < people.length; i++) {
+            person = people[i];
             clone = row.cloneNode(true); // true means get all descendant nodes too
             clone.setAttribute('id', person.key);
             anchor = clone.getElementsByTagName('a')[0];
             anchor.innerText = fullName(person);
-            anchor.setAttribute('title', person.Email + '  ph. ' + person.Phone); //should be 'data-content' but doesn't work!
+            anchor.setAttribute('data-content', person.Email + '  ph. ' + person.Phone);
             $(anchor).data("pid", person.Id);
             clone.getElementsByTagName('td')[1].innerHTML = assigned[person.Id] ? personBusyIcon : person.Available ? personAvailIcon : '';
-
-            show(clone);
-            clone.setAttribute('name', (person.LastName + ' ' + person.FirstName).toLowerCase()); //for putting edits in proper order
-
-            for (var i = 0; (tr = table.rows[i]); i++) {
-                if (tr.getAttribute('name')) {
-                    if (clone.getAttribute('name') < tr.getAttribute('name')) {
-                        tr.insertAdjacentElement('beforebegin', clone);
-                    }
-                }
-            }
-            table.append(clone); // add new row to end of tablebody
+            addClone();
         }
-    }
+        $('[data-toggle="popover"]').popover(); // enable popover anchor for persons
 
-    function setupPopover() {
-        $('[data-toggle="popover"]').popover(); // enable popover anchor for person
+        function addClone() {
+            $(clone).removeClass('nodisplay')
+            table.append(clone);
+        }
+
     }
 
     function enableButton(buttonName) {
         document.getElementById(buttonName).classList.remove('disabled');
     }
 
+    function sortedPeople() {
+        var arr = [];
+        var person;
+
+        myStorage.begin();
+        while ((person = myStorage.nextPerson())) {
+            arr.push(person);
+        }
+
+        arr.sort(function (a, b) {
+            return sortName(a) < sortName(b) ? -1 : 1;
+        });
+
+        return arr;
+
+        function sortName(person) {
+            return person.LastName + ' ' + person.FirstName;
+        }
+
+    }
+
+    //simulates localstorage, or database, ensuring that objects returned are not references to the stored data
+    //which the code could inadvertently change
     function classStorage() {
         var dict = {};
         var index;
@@ -318,6 +411,10 @@ var AdminApp = (function () {
                 return get((id === 0 ? 'P' : 'p') + id);
             },
 
+            deletePerson: function (id) {
+                delete dict['p' + id];
+            },
+
             setLocation: function (location) {
                 set('l' + location.Id, location);
             },
@@ -332,8 +429,7 @@ var AdminApp = (function () {
         }
 
         function get(key) {
-            var o = dict[key];
-
+            var o = jQuery.extend(true, {}, dict[key]); // return a clone of the object
             Object.defineProperty(o, "key", {
                 value: key,
                 writable: false,
@@ -356,7 +452,7 @@ var AdminApp = (function () {
         }
     }
 
-    function formPersonJson() {
+    function CollectJsonFormData() {
         var control;
         var person = myStorage.getPerson(0); //just to get the property names
 
@@ -393,19 +489,10 @@ var AdminApp = (function () {
         return ($('#cancelAssignment').has('a').length === 0);
     }
 
-    function showModal(heading, message) {
+    function showInfoModal(heading, message) {
         $('#infoModal h4').text(heading);
         $('#infoModal p').text(message);
         $("#infoModal").modal();
-    }
-
-
-    function show(selector) {
-        $(selector).removeClass('hide');
-    }
-
-    function hide(selector) {
-        $(selector).addClass('hide');
     }
 
     function contactName(id) {
@@ -421,3 +508,4 @@ var AdminApp = (function () {
         return person.FirstName + ' ' + person.LastName;
     }
 })();
+

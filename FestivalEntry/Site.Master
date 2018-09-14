@@ -57,7 +57,6 @@
                             <ul class="nav navbar-nav navbar-right">
                                 <li><a runat="server" href="~/Account/TeacherLogin">Teacher Log in</a></li>
                                 <li><a runat="server" href="~/Account/AdminLogin">Admin Log in</a></li>
-                                <li><a runat="server" href="~/Account/Register">Register</a></li>
                             </ul>
                         </AnonymousTemplate>
 

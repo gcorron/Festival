@@ -93,5 +93,6 @@
     <Build Include="dbo\Stored Procedures\SelectContactsByParent.sql" />
     <Build Include="dbo\Stored Procedures\GetLoginPerson.sql" />
     <Build Include="dbo\Stored Procedures\GenerateUserName.sql" />
+    <Build Include="dbo\Stored Procedures\DeleteContact.sql" />
   </ItemGroup>
 </Project>

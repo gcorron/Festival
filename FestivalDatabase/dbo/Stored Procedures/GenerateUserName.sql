@@ -13,6 +13,8 @@ BEGIN
 		RAISERROR('Argument not alphabetic',11,1,'GenerateUserName')
 	END
 
+	-- make it lower case
+	set @seed=lower(@seed)
 
 	-- find the maximum suffix int used with this seed
 	set @suffixstart=LEN(@seed)+1

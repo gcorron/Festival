@@ -8,7 +8,7 @@ BEGIN
 	select b.LastName, b.FirstName, b.Instrument,
 		c.id as ParentLocationId,c.locationName as ParentLocationName,
 		d.id as LocationId, d.LocationName,
-		d.LocationType as RoleType
+		isnull(d.LocationType,'-') as RoleType
 	from AspNetUsers a inner join contact b
 		on a.UserName=b.UserName
 		left outer join location c on b.ParentLocation=c.id
