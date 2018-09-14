@@ -65,7 +65,8 @@ namespace FestivalEntry.Account
                             ErrorMessage.Visible = true;
                             return;
                         }
-                        Response.Redirect($"/Admin?{UserName.Text}");
+
+                        Response.Redirect($"/{(theUser.RoleType == LoginPerson.Chair ? "Chair" : "Admin" )}?{UserName.Text}");
                         break;
                     case SignInStatus.LockedOut:
                         Response.Redirect("/Account/Lockout");

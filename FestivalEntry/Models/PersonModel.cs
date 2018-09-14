@@ -2,6 +2,7 @@
 
 namespace FestivalEntry.Models
 {
+
     public struct Contact
     {
         public int Id { get; set; }
@@ -42,6 +43,14 @@ namespace FestivalEntry.Models
         public string LocationDomain { get => RoleScope(LocationRank); }
         public string LocationSlot { get => RoleScope(LocationRank+1); }
 
+        public const char Admin = 'A';
+        public const char Director = 'B';
+        public const char Manager = 'C';
+        public const char Coordinator = 'D';
+        public const char Chair = 'E';
+        public const char Teacher = 'T';
+
+
 
         private int LocationRank
         {
@@ -49,12 +58,12 @@ namespace FestivalEntry.Models
             {
                 switch (RoleType)
                 {
-                    case 'A': return 1;
-                    case 'B': return 2;
-                    case 'C': return 3;
-                    case 'D': return 4;
-                    case 'E': return 5;
-                    case 'T': return 6;
+                    case Admin: return 1;
+                    case Director:return 2;
+                    case Manager: return 3;
+                    case Coordinator: return 4;
+                    case Chair: return 5;
+                    case Teacher: return 6;
                     default: throw new ArgumentOutOfRangeException("RoleType is not valid.");
                 }
             }
