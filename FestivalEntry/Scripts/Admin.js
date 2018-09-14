@@ -1,15 +1,7 @@
 ﻿"use strict";
 
 $(document).ready(function () {
-
-    $(document).ajaxStart(function () {
-        document.body.style.cursor = 'wait';
-    });
-
-    $(document).ajaxStop(function () {
-        document.body.style.cursor = 'default';
-    });
-
+    AdminApp.init();
 });
 
 var AdminApp = (function () {
@@ -17,9 +9,6 @@ var AdminApp = (function () {
 
     var personAvailIcon = '<span class="glyphicon glyphicon-star-empty"></span>';
     var personBusyIcon = '<span class="glyphicon glyphicon-star"></span>';
-    $('#starsKey').attr('data-content', '<p>' + personBusyIcon + ' means the person has been assigned to one of your locations.</p>' +
-        '<p>' + personAvailIcon + ' means the person has not been assigned.</p>' +
-        '<p> No star means the person has been designated not available to be assigned.</p>');
 
     var myStorage = new classStorage();
     var pendingLocation;
@@ -168,6 +157,11 @@ var AdminApp = (function () {
         },
 
         updatePerson: function () {
+            if (!$('form').valid()) {
+                showInfoModal('Attention', 'Please make corrections first.');
+                return;
+            }
+
             $.ajax({
                 type: "POST",
                 url: "Admin.aspx/UpdatePerson",
@@ -178,6 +172,22 @@ var AdminApp = (function () {
                 failure: onUpdatePersonFailure,
                 error: onUpdatePersonFailure
             });
+        },
+
+        init: function () {
+            $(document).ajaxStart(function () {
+                document.body.style.cursor = 'wait';
+            });
+
+            $(document).ajaxStop(function () {
+                document.body.style.cursor = 'default';
+            });
+
+            $('form').validate();
+
+            $('#starsKey').attr('data-content', '<p>' + personBusyIcon + ' means the person has been assigned to one of your locations.</p>' +
+                '<p>' + personAvailIcon + ' means the person has not been assigned.</p>' +
+                '<p> No star means the person has been designated not available to be assigned.</p>');
         }
 
     };

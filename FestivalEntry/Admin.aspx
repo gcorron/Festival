@@ -1,8 +1,10 @@
 ﻿<%@ Page Title="" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeBehind="Admin.aspx.cs" Inherits="FestivalEntry.Admin " %>
 
 <asp:Content ID="Content1" ContentPlaceHolderID="MainContent" runat="server">
-    <script src="Scripts/Admin.js" type="text/javascript"></script>
-    <link href="Content/Admin.css" rel="stylesheet" />
+    <script src="Scripts/Admin.js"></script>
+    <script src="Scripts/jquery.validate.min.js"></script>
+
+    <link href="Content/Festival.css" rel="stylesheet" />
 
     <asp:PlaceHolder runat="server" ID="ErrorMessage" Visible="false">
         <p class="text-danger">
@@ -96,19 +98,23 @@
                         <div class="col-sm-6">
                             <div class="form-group">
                                 <label class="control-label" for="first">First Name:</label>
-                                <input class="form-control" type="text" id="FirstName" placeholder="Enter First Name" name="FirstName" maxlength="50">
+                                <input class="form-control" type="text" id="FirstName" placeholder="Enter First Name"
+                                    name="FirstName" maxlength="50" required>
                             </div>
                             <div class="form-group">
                                 <label class="control-label" for="last">Last Name:</label>
-                                <input class="form-control" type="text" id="LastName" placeholder="Enter Last Name" name="LastName" maxlength="50">
+                                <input class="form-control" type="text" id="LastName" placeholder="Enter Last Name"
+                                    name="LastName" minlength="2" maxlength="50" required>
                             </div>
                             <div class="form-group">
                                 <label class="control-label" for="email">Email:</label>
-                                <input class="form-control" type="email" id="Email" placeholder="Enter Email" name="Email" maxlength="50">
+                                <input class="form-control" type="email" id="Email" placeholder="Enter Email"
+                                    name="Email" maxlength="50" required>
                             </div>
                             <div class="form-group">
                                 <label class="control-label" for="phone">Phone:</label>
-                                <input class="form-control" type="tel" id="Phone" placeholder="Enter Phone" name="Phone" maxlength="50">
+                                <input class="form-control" type="tel" id="Phone" placeholder="Enter Phone"
+                                    name="Phone" maxlength="50" required>
                             </div>
 
                         </div>
@@ -116,8 +122,8 @@
                             <!-- RH half -->
                             <div id="instrumentGroup" class="form-group">
                                 <label class="control-label" for="instrument">Instrument Category:</label>
-                                <select class="form-control" id="Instrument" name="Instrument">
-                                    <option value="-">Select ...</option>
+                                <select class="form-control" id="Instrument" name="Instrument" required>
+                                    <option value="" disabled selected hidden>Select ...</option>
                                     <option value="P">Piano</option>
                                     <option value="S">Strings</option>
                                     <option value="V">Voice</option>

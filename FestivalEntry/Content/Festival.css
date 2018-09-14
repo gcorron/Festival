@@ -1,13 +1,4 @@
-﻿#cover {
-    position: fixed;
-    height: 100%;
-    width: 100%;
-    top: 0;
-    left: 0;
-    background: #FFF;
-    z-index: 9999;
-}
-
+﻿
 table {
     font-family: arial, sans-serif;
     border-collapse: collapse;
@@ -41,19 +32,10 @@ tr:nth-child(even) {
     cursor: pointer;
 }
 
-.modalDialog:target {
-    opacity: 1;
-    pointer-events: auto;
-}
-
 .centered {
     text-align: center;
 }
 
-a.disabled {
-    opacity: 50;
-    pointer-events: none;
-}
 .nodisplay {
         display:none;
 }
