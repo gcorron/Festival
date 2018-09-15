@@ -72,11 +72,9 @@ namespace FestivalEntry
         {
             int locationId = LocationIdSecured;
 
-            var Contacts = SQLData.SelectContactsByParent(locationId);
+            SQLData.SelectDataForLocation(locationId, out var Contacts, out var Locations);
             Contact empty = new Contact { Instrument = "-" };
             Contacts.Add(empty);
-
-            var Locations= SQLData.SelectLocationsByParent(locationId).OrderBy(p => p.LocationName);
 
             object[] returnArray=new object[2];
 
@@ -98,8 +96,6 @@ namespace FestivalEntry
         [System.Web.Services.WebMethod]
         public static string UpdatePerson(Contact person)
         {
-            JavaScriptSerializer json_serializer = new JavaScriptSerializer();
-            //Contact person = (Contact)json_serializer.DeserializeObject(personJSON);
             person.ParentLocation = LocationIdSecured;
             if (person.Id==0)
             {
@@ -110,6 +106,8 @@ namespace FestivalEntry
             int ret=SQLData.UpdateContact(person);
             if (person.Id == 0)
                 person.Id = ret;
+
+            JavaScriptSerializer json_serializer = new JavaScriptSerializer();
             return json_serializer.Serialize(person);
         }
 

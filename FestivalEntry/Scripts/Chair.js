@@ -1,86 +1,37 @@
 ﻿"use strict";
 
 $(document).ready(function () {
-    AdminApp.init();
-});
+    changePart('home');
+    $('.container').removeAttr('style');
+}); 
 
-var AdminApp = (function () {
+
+
+
+function changePart(id) {
+    $('#navbar li').removeClass('active');
+    $('.container .content').each(function (i, e) {
+        if ($(e).attr('id') == id) {
+            $(e).show();
+            $($('#navbar li')[i]).addClass('active'); 
+        }
+        else {
+            $(e).hide();
+        }
+    });
+}
+
+var AdminApp = function () {
 
 
     var personAvailIcon = '<span class="glyphicon glyphicon-star-empty"></span>';
     var personBusyIcon = '<span class="glyphicon glyphicon-star"></span>';
 
     var myStorage = new classStorage();
-    var pendingLocation;
 
     getData();
 
     return {
-
-
-        fillOrVacate: function (elt) {
-            var person;
-            var location = $(elt).data('lid');
-            var keys = {};
-            var tlocation;
-            var eligiblePerson;
-
-            if (assignmentMode()) {
-                cancelAssignmentMode();
-                return;
-            }
-            if (location.ContactId) {
-                person = myStorage.getPerson(location.ContactId);
-                if (confirm('Remove ' + fullName(person) + ' from ' + location.LocationName + '?')) {
-                    updateLocation(0);
-                }
-            }
-            else {
-                //check how many are eligibile to fill
-
-                myStorage.begin(); //create keys to search
-                while ((tlocation = myStorage.nextLocation())) {
-                    if (tlocation.ContactId) {
-                        keys['p' + tlocation.ContactId] = 'Y';
-                    }
-                }
-
-                // search for available people not assigned
-                myStorage.begin();
-
-                var count = 0;
-                while ((person = myStorage.nextPerson()) && count <= 2) {
-                    if (person.Available && !keys['p' + person.Id]) {
-                        eligiblePerson = person;
-                        count++;
-                    }
-                }
-
-                switch (count) {
-                    case 0: {
-                        showInfoModal('Fill vacancy', 'No people are eligile right now.\nA person can only fill one position, and must have available status.\n' +
-                            'Add a person or edit one who is not assigned,\nchanging their available status.');
-                        return;
-                    }
-                    case 1: {
-                        if (confirm('One person is eligible right now. Assign ' + fullName(eligiblePerson) + ' to ' + location.LocationName + '?')) {
-                            pendingLocation = location;
-                            updateLocation(eligiblePerson.Id);
-                            return;
-                        }
-                        return;
-                    }
-                    default: {
-                        changeAlertBox('#locationsAlert', 'Now, select a person with a ' + personAvailIcon + ' or click the cancel link.');
-                        changeAlertBox('#peopleAlert', 'You are selecting a person for ' + location.LocationName + '.');
-                        $('#addPerson').hide();
-                        $(elt).children('td')[1].append($('#cancelAssignment > a')[0]); //move the the cancel link out of the invisible div
-                        pendingLocation = location;
-                        return;
-                    }
-                }
-            }
-        },
 
         editPerson: function (id) {
             var person;
@@ -192,26 +143,6 @@ var AdminApp = (function () {
 
     };
 
-    function updateLocation(contactId) {
-        pendingLocation.ContactId = contactId;
-        cancelAssignmentMode();
-
-        $.ajax({
-            type: "POST",
-            url: "Admin.aspx/UpdateLocation",
-            data: JSON.stringify({ location: pendingLocation }),
-            contentType: "application/json; charset=utf-8",
-            dataType: "json",
-            success: onUpdateLocationSuccess,
-            failure: onAJAXFailure,
-            error: onAJAXFailure
-        });
-    }
-
-    function onUpdateLocationSuccess(response) {
-        myStorage.setLocation(pendingLocation);
-        renderTables();
-    }
 
     function onUpdatePersonSuccess(response) {
         var person = JSON.parse(response.d);
@@ -243,14 +174,13 @@ var AdminApp = (function () {
     function getData() {
         $.ajax({
             type: "POST",
-            url: "Admin.aspx/GetPeople",
+            url: "Chair.aspx/GetData",
             data: '{}',
             contentType: "application/json; charset=utf-8",
             dataType: "json",
             success: onGetDataSuccess,
             failure: onAJAXFailure,
-            error: onAJAXFailure,
-            global: true
+            error: onAJAXFailure
         });
     }
 
@@ -302,8 +232,8 @@ var AdminApp = (function () {
 
     function onGetDataSuccess(response) {
         var array = JSON.parse(response.d);
-        var people = array[0];
-        var locations = array[1];
+        var events = array[0];
+        var teacherEvents = array[1];
 
         people.forEach(function (person) { myStorage.setPerson(person); });
         locations.forEach(function (location) { myStorage.setLocation(location); });
@@ -517,5 +447,5 @@ var AdminApp = (function () {
     function fullName(person) {
         return person.FirstName + ' ' + person.LastName;
     }
-})();
+};
 

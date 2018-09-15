@@ -14,8 +14,6 @@ namespace FestivalEntry.Models
         public string Instrument { get; set; }
         public Boolean Available { get; set; }
         public int ParentLocation { get; set; }
-
-        //        public string FullName { get => $"{FirstName} {LastName}"; }
     }
 
     public struct Location

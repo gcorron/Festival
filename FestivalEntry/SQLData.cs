@@ -6,6 +6,7 @@ using System.Linq;
 using System.Web;
 using Dapper;
 using FestivalEntry.Models;
+using static FestivalEntry.Models.EventModels;
 
 namespace FestivalEntry
 {
@@ -37,21 +38,32 @@ namespace FestivalEntry
             }
 
         }
-        public static List<Contact> SelectContactsByParent(int parentLocation)
+
+        public static void SelectDataForLocation(int location, out List<Contact> contacts, out Location[] locations)
         {
             using (IDbConnection connection = GetDBConnection())
             {
-                return connection.Query<Contact>("SelectContactsByParent", new { parentLocation }, commandType: CommandType.StoredProcedure).ToList<Contact>();
+                using (var multi=connection.QueryMultiple("SelectDataForLocation",new { location }, commandType: CommandType.StoredProcedure))
+                {
+                    contacts = multi.Read<Contact>().ToList<Contact>();
+                    locations = multi.Read<Location>().ToArray<Location>();
+
+                }
             }
+
         }
 
-
-        public static Location[] SelectLocationsByParent(int parentLocation)
+        public static void SelectDataForChair(int location, out List<Event> events, out List<TeacherEvent> teacherEvents)
         {
             using (IDbConnection connection = GetDBConnection())
             {
-                return connection.Query<Location>("SelectLocationsByParent", new { parentLocation }, commandType: CommandType.StoredProcedure).ToArray<Location>();
+                using (var multi = connection.QueryMultiple("SelectDataForLocation", new { location }, commandType: CommandType.StoredProcedure))
+                {
+                    events = multi.Read<Event>().ToList<Event>();
+                    teacherEvents = multi.Read<TeacherEvent>().ToList<TeacherEvent>();
+                }
             }
+
         }
 
         public static LoginPerson GetLoginPerson(string userName)

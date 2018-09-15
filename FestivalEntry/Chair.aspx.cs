@@ -13,6 +13,7 @@ using Owin;
 using System.Web.Security;
 using System.Web.Configuration;
 using System.Threading;
+using static FestivalEntry.Models.EventModels;
 
 namespace FestivalEntry
 {
@@ -62,26 +63,22 @@ namespace FestivalEntry
         }
 
         [System.Web.Services.WebMethod]
-        public static void UpdateLocation(Location location)
-        {
-            SQLData.UpdateLocation(location);
-        }
-
-        [System.Web.Services.WebMethod]
-        public static string GetPeople()
+        public static string GetInitialData()
         {
             int locationId = LocationIdSecured;
 
-            var Contacts = SQLData.SelectContactsByParent(locationId);
-            Contact empty = new Contact { Instrument = "-" };
-            Contacts.Add(empty);
+            SQLData.SelectDataForChair(locationId, out var events, out var teacherEvents);
 
-            var Locations = SQLData.SelectLocationsByParent(locationId).OrderBy(p => p.LocationName);
+            Event empty = new Event { };
+            events.Add(empty);
+            TeacherEvent empty2 = new TeacherEvent { };
+            teacherEvents.Add(empty2);
+
 
             object[] returnArray = new object[2];
 
-            returnArray[0] = Contacts.ToArray();
-            returnArray[1] = Locations;
+            returnArray[0] = events.ToArray();
+            returnArray[1] = teacherEvents.ToArray();
 
             JavaScriptSerializer json_serializer = new JavaScriptSerializer();
             return json_serializer.Serialize(returnArray);
